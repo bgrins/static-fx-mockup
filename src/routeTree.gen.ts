@@ -13,7 +13,6 @@ import { createServerRootRoute } from '@tanstack/react-start/server'
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SqliteVecDemoRouteImport } from './routes/sqlite-vec-demo'
-import { Route as SplitViewRouteImport } from './routes/split-view'
 import { Route as LinkPreviewDemoRouteImport } from './routes/link-preview-demo'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InferTestIndexRouteImport } from './routes/infer-test/index'
@@ -33,11 +32,6 @@ const InferTestRoute = InferTestRouteImport.update({
 const SqliteVecDemoRoute = SqliteVecDemoRouteImport.update({
   id: '/sqlite-vec-demo',
   path: '/sqlite-vec-demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SplitViewRoute = SplitViewRouteImport.update({
-  id: '/split-view',
-  path: '/split-view',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LinkPreviewDemoRoute = LinkPreviewDemoRouteImport.update({
@@ -79,7 +73,6 @@ const ApiInferV1ChatCompletionsServerRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/link-preview-demo': typeof LinkPreviewDemoRoute
-  '/split-view': typeof SplitViewRoute
   '/sqlite-vec-demo': typeof SqliteVecDemoRoute
   '/infer-test': typeof InferTestInferTestRoute
   '/infer-test/': typeof InferTestIndexRoute
@@ -87,7 +80,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/link-preview-demo': typeof LinkPreviewDemoRoute
-  '/split-view': typeof SplitViewRoute
   '/sqlite-vec-demo': typeof SqliteVecDemoRoute
   '/infer-test': typeof InferTestIndexRoute
 }
@@ -95,7 +87,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/link-preview-demo': typeof LinkPreviewDemoRoute
-  '/split-view': typeof SplitViewRoute
   '/sqlite-vec-demo': typeof SqliteVecDemoRoute
   '/infer-test': typeof InferTestRouteWithChildren
   '/infer-test/_infer-test': typeof InferTestInferTestRoute
@@ -106,22 +97,15 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/link-preview-demo'
-    | '/split-view'
     | '/sqlite-vec-demo'
     | '/infer-test'
     | '/infer-test/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/link-preview-demo'
-    | '/split-view'
-    | '/sqlite-vec-demo'
-    | '/infer-test'
+  to: '/' | '/link-preview-demo' | '/sqlite-vec-demo' | '/infer-test'
   id:
     | '__root__'
     | '/'
     | '/link-preview-demo'
-    | '/split-view'
     | '/sqlite-vec-demo'
     | '/infer-test'
     | '/infer-test/_infer-test'
@@ -131,7 +115,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LinkPreviewDemoRoute: typeof LinkPreviewDemoRoute
-  SplitViewRoute: typeof SplitViewRoute
   SqliteVecDemoRoute: typeof SqliteVecDemoRoute
   InferTestRoute: typeof InferTestRouteWithChildren
 }
@@ -186,13 +169,6 @@ declare module '@tanstack/react-router' {
       path: '/sqlite-vec-demo'
       fullPath: '/sqlite-vec-demo'
       preLoaderRoute: typeof SqliteVecDemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/split-view': {
-      id: '/split-view'
-      path: '/split-view'
-      fullPath: '/split-view'
-      preLoaderRoute: typeof SplitViewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/link-preview-demo': {
@@ -268,7 +244,6 @@ const InferTestRouteWithChildren = InferTestRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LinkPreviewDemoRoute: LinkPreviewDemoRoute,
-  SplitViewRoute: SplitViewRoute,
   SqliteVecDemoRoute: SqliteVecDemoRoute,
   InferTestRoute: InferTestRouteWithChildren,
 }

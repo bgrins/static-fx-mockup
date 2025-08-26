@@ -349,16 +349,14 @@ function Browser(): React.ReactElement {
                   {smartWindowMode && activeTab?.url !== ABOUT_PAGES.FIREFOX_VIEW ? (
                     <div className="flex flex-col h-full rounded-xl border border-white/30 shadow-[0px_4px_14px_0px_rgba(0,0,0,0.1)] overflow-hidden">
                       {/* Smart Mode Toolbar - positioned above sidebar */}
-                      <div className="border-b border-[rgba(21,20,26,0.1)]">
-                        <SmartToolbar
-                          onRefresh={handleRefresh}
-                          onClose={() => {
-                            setSidebarExpanded(false);
-                          }}
-                          pageTitle={activeTab?.title}
-                          className="shrink-0"
-                        />
-                      </div>
+                      <SmartToolbar
+                        onRefresh={handleRefresh}
+                        onClose={() => {
+                          setSidebarExpanded(false);
+                        }}
+                        pageTitle={activeTab?.title}
+                        className="shrink-0"
+                      />
                       <MegaChat
                         accessKey={
                           typeof window !== "undefined"
@@ -442,14 +440,14 @@ function Browser(): React.ReactElement {
                   className={cn(
                     "flex flex-1 min-w-0 h-full relative transition-all duration-200 ease-in-out",
                     smartWindowMode && activeTab?.url !== ABOUT_PAGES.FIREFOX_VIEW
-                      ? "flex-col p-1"
+                      ? "flex-col pl-1 pt-1"
                       : "overflow-hidden",
                     sidebarOpen && !smartWindowMode && "rounded-tl-lg",
                   )}
                 >
                   {/* Render toolbar in smart window mode when not on Firefox View */}
                   {smartWindowMode && activeTab?.url !== ABOUT_PAGES.FIREFOX_VIEW && (
-                    <div className="browser-chrome shrink-0 mb-1">
+                    <div className="browser-chrome shrink-0">
                       <Toolbar
                         ref={addressBarRef}
                         url={activeTab?.displayUrl ?? activeTab?.url ?? ""}
@@ -478,9 +476,9 @@ function Browser(): React.ReactElement {
                             }}
                             src={urlToProxy(tab.url)}
                             className={cn(
-                              "w-full h-full",
+                              "w-full h-full bg-white outline-none",
                               smartWindowMode && activeTab?.url !== ABOUT_PAGES.FIREFOX_VIEW
-                                ? "rounded-lg shadow-lg border border-black/5"
+                                ? "shadow-lg border-l border-black/5"
                                 : "absolute inset-0",
                               tab.id === activeTabId && tab.url !== ABOUT_PAGES.BLANK
                                 ? "block"
@@ -587,9 +585,9 @@ function Browser(): React.ReactElement {
                             }}
                             src={tab.url} // Serve local file directly
                             className={cn(
-                              "w-full h-full",
+                              "w-full h-full bg-white outline-none",
                               smartWindowMode && activeTab?.url !== ABOUT_PAGES.FIREFOX_VIEW
-                                ? "rounded-lg shadow-lg border border-black/5"
+                                ? "shadow-lg border-l border-black/5"
                                 : "absolute inset-0",
                               tab.id === activeTabId ? "block" : "hidden",
                             )}
