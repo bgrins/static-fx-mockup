@@ -334,7 +334,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
         navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(suggestion)} chat`;
         break;
       case 'google-search':
-        navigateUrl = `https://www.google.com/search?q=${encodeURIComponent(suggestion)}`;
+        navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(suggestion)}`;
         break;
       case 'google-result':
       default:
@@ -342,7 +342,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
         const isURL = suggestion.includes('.') || suggestion.startsWith('http');
         navigateUrl = isURL
           ? (suggestion.startsWith('http') ? suggestion : `https://${suggestion}`)
-          : `https://www.google.com/search?q=${encodeURIComponent(suggestion)}`;
+          : `https://duckduckgo.com?q=${encodeURIComponent(suggestion)}`;
         break;
     }
 

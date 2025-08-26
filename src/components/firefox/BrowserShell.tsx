@@ -87,8 +87,8 @@ export const BrowserShell = forwardRef<AddressBarHandle, BrowserShellProps>(func
         </ContextMenuContent>
       </ContextMenu>
       
-      {/* Toolbar */}
-      {!hideToolbar && (
+      {/* Toolbar - positioned differently based on mode */}
+      {!hideToolbar && !smartWindowMode && (
         <ContextMenu>
           <ContextMenuTrigger asChild>
             <div id="firefox-toolbar" className="browser-chrome">
@@ -108,6 +108,7 @@ export const BrowserShell = forwardRef<AddressBarHandle, BrowserShellProps>(func
                 onCloseBothTabs={onCloseBothTabs}
                 showSplitView={showSplitView}
                 onSidebarToggle={onSidebarToggle}
+                smartMode={smartWindowMode}
               />
             </div>
           </ContextMenuTrigger>

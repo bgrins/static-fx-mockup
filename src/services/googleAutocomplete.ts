@@ -26,10 +26,12 @@ export class GoogleAutocompleteService {
       }
 
       const data = await response.json();
+      const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+      console.log(suggestions);
 
       return {
         query: data.query || query,
-        suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
+        suggestions,
         metadata: data.metadata,
       };
     } catch (error) {
