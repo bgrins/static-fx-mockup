@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { OpenGraphPreview } from './OpenGraphPreview';
+import { SearchAutocomplete } from './SearchAutocomplete';
 import { extractOpenGraphFromHTML } from '~/utils/opengraph';
+import { GoogleAutocompleteService } from '~/services/googleAutocomplete';
 import { PROXY_MESSAGE_TYPES } from '~/constants/browser';
 import type { Tab } from '~/types/browser';
 import type { OpenGraphData } from '~/utils/opengraph';
@@ -59,7 +61,12 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   // Store command IDs to map responses back to tabs
   const [commandToTabMap, setCommandToTabMap] = useState<{ [key: string]: string }>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [googleSuggestions, setGoogleSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Expose imperative handle for focusing search
   React.useImperativeHandle(ref, () => ({
@@ -166,19 +173,179 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
     }
   }, [smartWindowMode]);
 
+  // Handle clicks outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const clickedInsideInput = searchInputRef.current && searchInputRef.current.contains(target);
+      const clickedInsideAutocomplete = autocompleteRef.current && autocompleteRef.current.contains(target);
+      
+      if (!clickedInsideInput && !clickedInsideAutocomplete) {
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Debounced function to fetch autocomplete suggestions
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setGoogleSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const result = await GoogleAutocompleteService.getSuggestions(query);
+      setGoogleSuggestions(result.suggestions);
+      // Always show suggestions when there's a query (even if no Google results)
+      setShowSuggestions(true);
+      setSelectedSuggestionIndex(-1);
+    } catch (error) {
+      console.error('Failed to fetch autocomplete suggestions:', error);
+      setGoogleSuggestions([]);
+      // Still show Chat and Google search options even if API fails
+      setShowSuggestions(true);
+    }
+  }, []);
+
+  // Handle search input change with debouncing
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    // Clear existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new debounce timer
+    debounceTimerRef.current = setTimeout(() => {
+      fetchSuggestions(value);
+    }, 300);
+  };
+
+  // Handle keyboard navigation in search input
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || !searchQuery.trim()) {
+      return;
+    }
+
+    // Calculate total suggestions: Chat + Google Search + Google results
+    const totalSuggestions = 2 + googleSuggestions.length;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < totalSuggestions - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev > 0 ? prev - 1 : totalSuggestions - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0) {
+          // Determine suggestion type and text based on index
+          let suggestionText: string;
+          let suggestionType: 'chat' | 'google-search' | 'google-result';
+          
+          if (selectedSuggestionIndex === 0) {
+            // Chat
+            suggestionText = searchQuery;
+            suggestionType = 'chat';
+          } else if (selectedSuggestionIndex === 1) {
+            // Search with Google
+            suggestionText = searchQuery;
+            suggestionType = 'google-search';
+          } else {
+            // Google result
+            const googleIndex = selectedSuggestionIndex - 2;
+            suggestionText = googleSuggestions[googleIndex] || searchQuery;
+            suggestionType = 'google-result';
+          }
+          
+          handleSuggestionSelect(suggestionText, suggestionType);
+        } else {
+          handleSearchSubmit(e);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+    }
+  };
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = (suggestion: string, type: 'chat' | 'google-search' | 'google-result') => {
+    setSearchQuery(suggestion);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    
+    // Handle different suggestion types
+    let navigateUrl: string;
+    
+    switch (type) {
+      case 'chat':
+        // For chat, we might want to navigate to a chat interface or handle differently
+        // For now, we'll use the search query as a fallback
+        navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(suggestion)} chat`;
+        break;
+      case 'google-search':
+        navigateUrl = `https://www.google.com/search?q=${encodeURIComponent(suggestion)}`;
+        break;
+      case 'google-result':
+      default:
+        // Check if it looks like a URL
+        const isURL = suggestion.includes('.') || suggestion.startsWith('http');
+        navigateUrl = isURL
+          ? (suggestion.startsWith('http') ? suggestion : `https://${suggestion}`)
+          : `https://www.google.com/search?q=${encodeURIComponent(suggestion)}`;
+        break;
+    }
+
+    onNewTab?.(navigateUrl);
+    setSearchQuery('');
+  };
+
+  // Handle mouse hover over suggestions
+  const handleSuggestionHover = (index: number) => {
+    setSelectedSuggestionIndex(index);
+  };
+
   // Handle search form submission - Firefox View should NEVER navigate itself
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      // Check if it looks like a URL
+      
+    if (searchQuery && searchQuery.trim()) {
+      // Default search behavior - search with Google
       const isURL = searchQuery.includes('.') || searchQuery.startsWith('http');
       const navigateUrl = isURL
         ? (searchQuery.startsWith('http') ? searchQuery : `https://${searchQuery}`)
-        : `https://duckduckgo.com/?q=${encodeURIComponent(searchQuery)}`;
+        : `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
 
       // Firefox View always creates new tabs with the URL directly
       onNewTab?.(navigateUrl);
       setSearchQuery('');
+      setShowSuggestions(false);
+      setSelectedSuggestionIndex(-1);
     }
   };
 
@@ -228,15 +395,31 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
               <div id="search-section" className={styles.searchSection}>
 
                 <form id="search-form" onSubmit={handleSearchSubmit} className={styles.searchForm}>
-                  <div id="search-input-wrapper" className={styles.search_bar}>
+                  <div id="search-input-wrapper" className={styles.search_bar} style={{ position: 'relative' }}>
                     <input
                       ref={searchInputRef}
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchInputChange}
+                      onKeyDown={handleSearchKeyDown}
+                      onFocus={() => {
+                        if (searchQuery.trim()) {
+                          setShowSuggestions(true);
+                        }
+                      }}
                       placeholder="Search or enter address"
                       id="search-input"
                       className={styles.searchInput}
+                      autoComplete="off"
+                    />
+                    <SearchAutocomplete
+                      ref={autocompleteRef}
+                      googleSuggestions={googleSuggestions}
+                      query={searchQuery}
+                      isVisible={showSuggestions}
+                      selectedIndex={selectedSuggestionIndex}
+                      onSuggestionClick={handleSuggestionSelect}
+                      onSuggestionHover={handleSuggestionHover}
                     />
                     <div className={styles.search_controls}>
                       <button
