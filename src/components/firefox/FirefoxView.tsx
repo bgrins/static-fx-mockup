@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { OpenGraphPreview } from './OpenGraphPreview';
-import { SearchAutocomplete } from './SearchAutocomplete';
+import { SearchAutocomplete, isQuestionQuery } from './SearchAutocomplete';
 import { extractOpenGraphFromHTML } from '~/utils/opengraph';
 import { GoogleAutocompleteService } from '~/services/googleAutocomplete';
 import { PROXY_MESSAGE_TYPES } from '~/constants/browser';
@@ -64,6 +64,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   const [googleSuggestions, setGoogleSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [previousQueryWasQuestion, setPreviousQueryWasQuestion] = useState<boolean | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -204,6 +205,8 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
     if (!query.trim()) {
       setGoogleSuggestions([]);
       setShowSuggestions(false);
+      setSelectedSuggestionIndex(-1);
+      setPreviousQueryWasQuestion(null);
       return;
     }
 
@@ -212,14 +215,33 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
       setGoogleSuggestions(result.suggestions);
       // Always show suggestions when there's a query (even if no Google results)
       setShowSuggestions(true);
-      setSelectedSuggestionIndex(-1);
+      
+      // Check if the question status has changed
+      const isQuestion = isQuestionQuery(query);
+      if (previousQueryWasQuestion !== isQuestion) {
+        // Question status changed, reset to first option (which is now the preferred one)
+        setSelectedSuggestionIndex(0);
+        setPreviousQueryWasQuestion(isQuestion);
+      } else if (selectedSuggestionIndex === -1) {
+        // No selection yet, set default to first option
+        setSelectedSuggestionIndex(0);
+      }
+      // Otherwise keep existing selection
     } catch (error) {
       console.error('Failed to fetch autocomplete suggestions:', error);
       setGoogleSuggestions([]);
       // Still show Chat and Google search options even if API fails
       setShowSuggestions(true);
+      
+      // Check if the question status has changed
+      const isQuestion = isQuestionQuery(query);
+      if (previousQueryWasQuestion !== isQuestion || selectedSuggestionIndex === -1) {
+        // Question status changed or no selection yet, set to first option
+        setSelectedSuggestionIndex(0);
+        setPreviousQueryWasQuestion(isQuestion);
+      }
     }
-  }, []);
+  }, [previousQueryWasQuestion, selectedSuggestionIndex]);
 
   // Handle search input change with debouncing
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -263,17 +285,20 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
         e.preventDefault();
         if (selectedSuggestionIndex >= 0) {
           // Determine suggestion type and text based on index
+          // Check if query is a question to match the same logic as SearchAutocomplete
+          const isQuestion = isQuestionQuery(searchQuery);
+          
           let suggestionText: string;
           let suggestionType: 'chat' | 'google-search' | 'google-result';
           
           if (selectedSuggestionIndex === 0) {
-            // Chat
+            // First option: Chat for questions, Google Search for non-questions
             suggestionText = searchQuery;
-            suggestionType = 'chat';
+            suggestionType = isQuestion ? 'chat' : 'google-search';
           } else if (selectedSuggestionIndex === 1) {
-            // Search with Google
+            // Second option: Google Search for questions, Chat for non-questions
             suggestionText = searchQuery;
-            suggestionType = 'google-search';
+            suggestionType = isQuestion ? 'google-search' : 'chat';
           } else {
             // Google result
             const googleIndex = selectedSuggestionIndex - 2;

@@ -17,6 +17,28 @@ interface SearchAutocompleteProps {
   onSuggestionHover: (index: number) => void;
 }
 
+// Helper function to detect if a query is likely a question
+export const isQuestionQuery = (query: string): boolean => {
+  const questionWords = ['who', 'what', 'when', 'where', 'why', 'how'];
+  const queryLower = query.toLowerCase().trim();
+  
+  // Check for direct question word starts
+  const startsWithQuestion = questionWords.some(word => 
+    queryLower.startsWith(word + ' ') || queryLower === word
+  );
+  
+  // Check for question patterns like "is", "are", "can", "does", "will", "should"
+  const auxiliaryVerbs = ['is', 'are', 'can', 'does', 'do', 'did', 'will', 'would', 'should', 'could'];
+  const startsWithAuxiliary = auxiliaryVerbs.some(verb =>
+    queryLower.startsWith(verb + ' ')
+  );
+  
+  // Check if it ends with a question mark
+  const endsWithQuestionMark = queryLower.endsWith('?');
+  
+  return startsWithQuestion || startsWithAuxiliary || endsWithQuestionMark;
+};
+
 export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocompleteProps>(({
   googleSuggestions,
   query,
@@ -29,20 +51,35 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
     return null;
   }
 
-  // Build the full suggestion list: Chat, Google Search, then Google results
+  // Detect question words to determine if this is likely a question
+  const isQuestion = isQuestionQuery(query);
+  
+  // Build the full suggestion list based on whether it's a question
   const allSuggestions: AutocompleteSuggestion[] = [];
   
-  // First suggestion: Chat
-  allSuggestions.push({
-    text: query,
-    type: 'chat',
-  });
-  
-  // Second suggestion: Search with Google
-  allSuggestions.push({
-    text: query,
-    type: 'google-search',
-  });
+  if (isQuestion) {
+    // For questions: Chat first, then Google Search
+    allSuggestions.push({
+      text: query,
+      type: 'chat',
+    });
+    
+    allSuggestions.push({
+      text: query,
+      type: 'google-search',
+    });
+  } else {
+    // For non-questions: Google Search first, then Chat
+    allSuggestions.push({
+      text: query,
+      type: 'google-search',
+    });
+    
+    allSuggestions.push({
+      text: query,
+      type: 'chat',
+    });
+  }
   
   // Add Google autocomplete results
   googleSuggestions.forEach(suggestion => {
@@ -116,16 +153,12 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
       <ul className={styles.suggestionsList} role="listbox">
         {allSuggestions.map((suggestion, index) => {
           const isSelected = index === selectedIndex;
-          const isFirstGoogleResult = suggestion.type === 'google-result' && 
-            allSuggestions.slice(0, index).filter(s => s.type === 'google-result').length === 0;
           
           return (
             <li
               key={`${suggestion.type}-${suggestion.text}-${index}`}
               className={`${styles.suggestionItem} ${
                 isSelected ? styles.suggestionItemSelected : ''
-              } ${
-                isFirstGoogleResult ? styles.suggestionItemHighlighted : ''
               }`}
               role="option"
               aria-selected={isSelected}
