@@ -5,21 +5,9 @@ import { PROXY_MESSAGE_TYPES } from '~/constants/browser';
 import type { Tab } from '~/types/browser';
 import type { OpenGraphData } from '~/utils/opengraph';
 // import { useProfile } from '~/hooks/useProfile'; // Temporarily commented out - will be re-enabled when shortcuts section is added back
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu';
 import { cn } from '~/lib/utils';
 import styles from './FirefoxView.module.css';
-import {
-  CloseIcon,
-  DownloadsIcon,
-  AccountIcon,
-  ExtensionsIcon,
-  AppMenuIcon
-} from '~/components/icons';
+import { CloseIcon } from '~/components/icons';
 import AiModeLogo from '../../assets/ai-mode-logo.png';
 
 interface FirefoxViewProps {
@@ -222,36 +210,6 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
 
   return (
     <div id="firefox-view-container" className={styles.firefoxViewContainer}>
-
-      {/* Fixed toolbar header for Smart Window Mode */}
-      {smartWindowMode && (
-        <div id="smart-mode-toolbar" className={styles.smartModeToolbar}>
-          <div id="toolbar-header" className={styles.toolbarHeader}>
-            {/* Toolbar icons aligned to the right */}
-            <div id="toolbar-icons" className={styles.toolbarIcons}>
-              <EmbeddedToolbarIcon id="downloads-icon" icon={<DownloadsIcon />} />
-              <EmbeddedToolbarIcon id="account-icon" icon={<AccountIcon />} />
-              <EmbeddedToolbarIcon id="extensions-icon" icon={<ExtensionsIcon />} />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button id="app-menu-button" className={styles.toolbarButton}>
-                    <AppMenuIcon />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => searchInputRef.current?.focus()}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
-                    </svg>
-                    <span className="ml-2">Focus Search</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div id="firefox-view-content" className={smartWindowMode ? styles.firefoxViewContentFull : styles.firefoxViewContent}>
         <div id="main-content-wrapper" className={styles.mainContentWrapper}>
 
@@ -483,14 +441,3 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
 
 FirefoxView.displayName = 'FirefoxView';
 
-function EmbeddedToolbarIcon({ id, icon, onClick }: { id?: string, icon: React.ReactNode, onClick?: () => void }) {
-  return (
-    <button
-      id={id}
-      className={styles.toolbarButton}
-      onClick={onClick}
-    >
-      {icon}
-    </button>
-  );
-}

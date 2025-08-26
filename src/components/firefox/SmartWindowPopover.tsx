@@ -1,6 +1,6 @@
 import React from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
-import { SparklesIcon, WindowIcon, CheckIcon } from '~/components/icons'
+import { SparklesIcon, WindowIcon, CheckIcon, SmartWindowIcon, FirefoxIcon } from '~/components/icons'
 import { cn } from '~/lib/utils'
 
 interface SmartWindowPopoverProps {
@@ -26,21 +26,13 @@ export function SmartWindowPopover({
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "relative w-8 h-8 flex items-center justify-center rounded-lg mr-2",
-            "bg-white/60 border border-gray-300/50",
-            "hover:bg-white/80 transition-all duration-200",
-            "shadow-sm"
+            "relative flex items-center justify-center ml-2 mr-2",
+            "hover:opacity-90 transition-opacity duration-200"
           )}
           title={smartWindowMode ? "Smart Window Mode" : "Classic Mode"}
+          data-name="expand right"
         >
-          {smartWindowMode ? (
-            <div className="relative">
-              <SparklesIcon />
-              <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-orange-500 rounded-full" />
-            </div>
-          ) : (
-            <WindowIcon />
-          )}
+          {smartWindowMode ? <SmartWindowIcon /> : <FirefoxIcon />}
         </button>
       </PopoverTrigger>
       <PopoverContent 

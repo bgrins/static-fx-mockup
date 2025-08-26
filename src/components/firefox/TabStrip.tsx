@@ -3,6 +3,7 @@ import { CloseIcon, PlusIcon } from '~/components/icons'
 import { cn } from '~/lib/utils'
 import type { TabStripProps } from '~/types/browser'
 import { SmartWindowPopover } from './SmartWindowPopover'
+import { ToolbarActions } from './ToolbarIcons'
 
 const TAB_WIDTH = {
   REGULAR: `w-[224px]`,
@@ -191,13 +192,17 @@ export function TabStrip({
         )}
       </div>
       
-      {isOverflowing && !shouldHideNewTabButton && (
+      {isOverflowing && !shouldHideNewTabButton && !smartWindowMode && (
         <button
           className="w-8 h-8 flex items-center justify-center rounded hover:bg-[rgba(21,20,26,0.07)] shrink-0"
           onClick={() => onNewTab?.()}
         >
           <PlusIcon />
         </button>
+      )}
+      
+      {smartWindowMode && (
+        <ToolbarActions onNewTab={onNewTab} smartWindowMode={smartWindowMode} />
       )}
       
       {onSmartWindowToggle && (
@@ -209,3 +214,4 @@ export function TabStrip({
     </div>
   )
 }
+
