@@ -324,7 +324,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   };
 
   // Handle suggestion selection
-  const handleSuggestionSelect = (suggestion: string, type: 'chat' | 'google-search') => {
+  const handleSuggestionSelect = (suggestion: string, type: 'chat' | 'search') => {
     setSearchQuery(suggestion);
     setDisplayedQuery(suggestion);
     setShowSuggestions(false);
@@ -339,7 +339,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
         // For now, we'll use the search query as a fallback
         navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(suggestion)} chat`;
         break;
-      case 'google-search':
+      case 'search':
       default:
         // Check if it looks like a URL
         const isURL = suggestion.includes('.') || suggestion.startsWith('http');
@@ -366,7 +366,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   };
 
   // Get suggestion info by index (matching SearchAutocomplete logic)
-  const getSuggestionByIndex = (index: number): { text: string; type: 'chat' | 'google-search' } | null => {
+  const getSuggestionByIndex = (index: number): { text: string; type: 'chat' | 'search' } | null => {
     if (!searchQuery.trim() || index < 0) return null;
     
     const isQuestion = isQuestionQuery(searchQuery);
@@ -375,9 +375,9 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
     if (index < totalBuiltInSuggestions) {
       // First two are always the original query with different types
       if (isQuestion) {
-        return index === 0 ? { text: searchQuery, type: 'chat' } : { text: searchQuery, type: 'google-search' };
+        return index === 0 ? { text: searchQuery, type: 'chat' } : { text: searchQuery, type: 'search' };
       } else {
-        return index === 0 ? { text: searchQuery, type: 'google-search' } : { text: searchQuery, type: 'chat' };
+        return index === 0 ? { text: searchQuery, type: 'search' } : { text: searchQuery, type: 'chat' };
       }
     }
     
@@ -389,7 +389,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
         const suggestionIsQuestion = isQuestionQuery(suggestion);
         return {
           text: suggestion,
-          type: suggestionIsQuestion ? 'chat' : 'google-search'
+          type: suggestionIsQuestion ? 'chat' : 'search'
         };
       }
     }
@@ -398,7 +398,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   };
 
   // Get the current suggestion type for UI updates
-  const getCurrentSuggestionType = (): 'chat' | 'google-search' | 'url' | null => {
+  const getCurrentSuggestionType = (): 'chat' | 'search' | 'url' | null => {
     if (!searchQuery.trim()) return null;
     
     // If suggestions are shown and something is selected
@@ -418,7 +418,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
     
     // Default behavior when no suggestions or nothing selected
     const isQuestion = isQuestionQuery(searchQuery);
-    return isQuestion ? 'chat' : 'google-search';
+    return isQuestion ? 'chat' : 'search';
   };
 
   // Handle search form submission - Firefox View should NEVER navigate itself
@@ -554,7 +554,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                                 <i className="fa-solid fa-comment ml-2"></i>
                               </button>
                             );
-                          } else if (suggestionType === 'google-search') {
+                          } else if (suggestionType === 'search') {
                             return (
                               <button
                                 className={styles.primary_button}

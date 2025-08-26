@@ -1,10 +1,10 @@
 import React from 'react';
-import { ChatIcon, GoogleIcon } from './AutocompleteIcons';
+import { ChatIcon, SearchIcon } from './AutocompleteIcons';
 import styles from './SearchAutocomplete.module.css';
 
 export interface AutocompleteSuggestion {
   text: string;
-  type: 'chat' | 'google-search';
+  type: 'chat' | 'search';
   isSelected?: boolean;
 }
 
@@ -13,7 +13,7 @@ interface SearchAutocompleteProps {
   query: string;
   isVisible: boolean;
   selectedIndex: number;
-  onSuggestionClick: (suggestion: string, type: 'chat' | 'google-search') => void;
+  onSuggestionClick: (suggestion: string, type: 'chat' | 'search') => void;
   onSuggestionHover: (index: number) => void;
 }
 
@@ -66,13 +66,13 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
     
     allSuggestions.push({
       text: query,
-      type: 'google-search',
+      type: 'search',
     });
   } else {
     // For non-questions: Google Search first, then Chat
     allSuggestions.push({
       text: query,
-      type: 'google-search',
+      type: 'search',
     });
     
     allSuggestions.push({
@@ -86,7 +86,7 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
     const suggestionIsQuestion = isQuestionQuery(suggestion);
     allSuggestions.push({
       text: suggestion,
-      type: suggestionIsQuestion ? 'chat' : 'google-search',
+      type: suggestionIsQuestion ? 'chat' : 'search',
     });
   });
 
@@ -118,8 +118,8 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
 
   const getSuggestionIcon = (type: AutocompleteSuggestion['type']) => {
     switch (type) {
-      case 'google-search':
-        return <GoogleIcon />;
+      case 'search':
+        return <SearchIcon />;
       case 'chat':
       default:
         return <ChatIcon className="opacity-50" />;
@@ -139,11 +139,11 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
               <span className={styles.suggestionSuffix}> - Chat</span>
             </>
           );
-        case 'google-search':
+        case 'search':
           return (
             <>
               <span>{highlightMatchedText(suggestion.text, query)}</span>
-              <span className={styles.suggestionSuffix}> - Search with Google</span>
+              <span className={styles.suggestionSuffix}> - Search with DuckDuckGo</span>
             </>
           );
       }

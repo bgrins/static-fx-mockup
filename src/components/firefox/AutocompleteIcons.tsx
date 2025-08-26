@@ -14,7 +14,7 @@ export const ChatIcon: React.FC<{ className?: string }> = ({ className = '' }) =
   );
 };
 
-export const GoogleIcon: React.FC<{ className?: string }> = ({ className = '' }) => {
+export const SearchIcon: React.FC<{ className?: string }> = ({ className = '' }) => {
   return (
     <svg 
       width="16" 
