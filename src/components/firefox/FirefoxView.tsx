@@ -20,6 +20,7 @@ import {
   ExtensionsIcon,
   AppMenuIcon
 } from '~/components/icons';
+import AiModeLogo from '../../assets/ai-mode-logo.png';
 
 interface FirefoxViewProps {
   tabs: Tab[];
@@ -254,39 +255,76 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
       <div id="firefox-view-content" className={smartWindowMode ? styles.firefoxViewContentFull : styles.firefoxViewContent}>
         <div id="main-content-wrapper" className={styles.mainContentWrapper}>
 
-
-
-
-
           {/* Centered Search Bar (only in Smart Window mode) */}
           {smartWindowMode && (
-            <div id="search-section" className={styles.searchSection}>
-              <form id="search-form" onSubmit={handleSearchSubmit} className={styles.searchForm}>
-                <div id="search-input-wrapper" className={styles.searchInputWrapper}>
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search or enter address"
-                    id="search-input"
-                    className={styles.searchInput}
-                  />
-                  <div id="search-actions" className={styles.searchActions}>
-                    <button
-                      id="search-submit-button"
-                      type="submit"
-                      className={styles.searchSubmitButton}
-                      aria-label="Search"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
-                      </svg>
-                    </button>
+            <>
+
+              <div id="logo-wrapper" className="mb-8 flex justify-center">
+                <img
+                  src={AiModeLogo}
+                  alt="AI mode Logo"
+                  className="h-10 w-auto"
+                />
+              </div>
+
+              <div id="search-section" className={styles.searchSection}>
+
+                <form id="search-form" onSubmit={handleSearchSubmit} className={styles.searchForm}>
+                  <div id="search-input-wrapper" className={styles.search_bar}>
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search or enter address"
+                      id="search-input"
+                      className={styles.searchInput}
+                    />
+                    <div className={styles.search_controls}>
+                      <button
+                        className={styles.clear_button}
+
+                      >
+                        <i className="fa-solid fa-plus mr-2"></i> Add image, tabs or files
+                      </button>
+
+                      <div className="flex items-center gap-4">
+                        <button
+                          className={styles.clear_button}
+
+                        >
+                          <i className="fa-solid fa-microphone"></i>
+                        </button>
+                        <button
+                          className={styles.primary_button}
+
+                        >
+                          <i className="fa-solid fa-arrow-right"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    
                   </div>
-                </div>
-              </form>
-            </div>
+
+                  {/* ACTION BUTTONS  */}
+                    <div className={styles.action_buttons}>
+                      <button className={styles.primary_button}>
+                        <i className="fa-solid fa-file-lines"></i>
+                        <span>Summarize</span>
+                      </button>
+                      <button className={styles.primary_button}>
+                        <i className="fa-solid fa-image"></i>
+                        <span>Generate Image</span>
+                      </button>
+                      <button className={styles.primary_button}>
+                        <i className="fa-solid fa-code"></i>
+                        <span>Write Code</span>
+                      </button>
+                    </div>
+                </form>
+              </div>
+            </>
           )}
 
 
@@ -436,8 +474,6 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
               )}
             </>
           )}
-
-
 
         </div>
       </div>

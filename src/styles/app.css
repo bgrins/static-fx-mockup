@@ -1,3 +1,5 @@
+@import "@fortawesome/fontawesome-free/css/all.min.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -60,6 +62,10 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Gradient colors */
+    --color-gradient-start: #e8b4f3;
+    --color-gradient-end: #ffe0ec;
   }
 }
 
@@ -124,12 +130,5 @@
 
 /* Gradient background for entire Firefox UI in Smart Window mode */
 .firefox-ui.smart-window-mode {
-  background: linear-gradient(
-    135deg,
-    rgb(131 65 202) 0%,
-    rgb(101 111 255) 25%,
-    rgb(147 131 255) 50%,
-    rgb(255 147 200) 75%,
-    rgb(255 182 155) 100%
-  ) !important;
+  background: linear-gradient(to right, var(--color-gradient-start), var(--color-gradient-end));
 }
