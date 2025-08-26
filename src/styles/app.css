@@ -124,12 +124,5 @@
 
 /* Gradient background for entire Firefox UI in Smart Window mode */
 .firefox-ui.smart-window-mode {
-  background: linear-gradient(
-    135deg,
-    rgb(131 65 202) 0%,
-    rgb(101 111 255) 25%,
-    rgb(147 131 255) 50%,
-    rgb(255 147 200) 75%,
-    rgb(255 182 155) 100%
-  ) !important;
+  background: linear-gradient(135deg, rgb(220, 188, 255) 0%, rgb(255, 220, 248) 100%) !important;
 }

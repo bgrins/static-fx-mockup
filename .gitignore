@@ -22,4 +22,5 @@ yarn.lock
 workers/wrangler.jsonc
 .env.production.local
 
+.playwright-mcp/
 scripts/.venv
