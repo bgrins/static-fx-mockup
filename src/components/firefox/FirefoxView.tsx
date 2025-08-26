@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { OpenGraphPreview } from './OpenGraphPreview';
-import { SearchAutocomplete, isQuestionQuery } from './SearchAutocomplete';
+import { SearchAutocomplete, isQuestionQuery, type AutocompleteSuggestion } from './SearchAutocomplete';
 import { extractOpenGraphFromHTML } from '~/utils/opengraph';
 import { GoogleAutocompleteService } from '~/services/googleAutocomplete';
 import { PROXY_MESSAGE_TYPES } from '~/constants/browser';
@@ -66,6 +66,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const [previousQueryWasQuestion, setPreviousQueryWasQuestion] = useState<boolean | null>(null);
+  const [currentSuggestions, setCurrentSuggestions] = useState<AutocompleteSuggestion[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -275,8 +276,8 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
       return;
     }
 
-    // Calculate total suggestions: 2 built-in + Google suggestions
-    const totalSuggestions = 2 + googleSuggestions.length;
+    // Use the actual suggestions count from SearchAutocomplete
+    const totalSuggestions = currentSuggestions.length;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -324,7 +325,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   };
 
   // Handle suggestion selection
-  const handleSuggestionSelect = (suggestion: string, type: 'chat' | 'search') => {
+  const handleSuggestionSelect = (suggestion: string, type: 'chat' | 'search' | 'navigation') => {
     setSearchQuery(suggestion);
     setDisplayedQuery(suggestion);
     setShowSuggestions(false);
@@ -338,6 +339,10 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
         // For chat, we might want to navigate to a chat interface or handle differently
         // For now, we'll use the search query as a fallback
         navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(suggestion)} chat`;
+        break;
+      case 'navigation':
+        // For navigation suggestions, go directly to the website
+        navigateUrl = suggestion.startsWith('http') ? suggestion : `https://${suggestion}`;
         break;
       case 'search':
       default:
@@ -365,36 +370,10 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
     }
   };
 
-  // Get suggestion info by index (matching SearchAutocomplete logic)
-  const getSuggestionByIndex = (index: number): { text: string; type: 'chat' | 'search' } | null => {
-    if (!searchQuery.trim() || index < 0) return null;
-    
-    const isQuestion = isQuestionQuery(searchQuery);
-    const totalBuiltInSuggestions = 2; // Chat and Google Search
-    
-    if (index < totalBuiltInSuggestions) {
-      // First two are always the original query with different types
-      if (isQuestion) {
-        return index === 0 ? { text: searchQuery, type: 'chat' } : { text: searchQuery, type: 'search' };
-      } else {
-        return index === 0 ? { text: searchQuery, type: 'search' } : { text: searchQuery, type: 'chat' };
-      }
-    }
-    
-    // Google autocomplete results
-    const googleIndex = index - totalBuiltInSuggestions;
-    if (googleIndex >= 0 && googleIndex < googleSuggestions.length) {
-      const suggestion = googleSuggestions[googleIndex];
-      if (suggestion) {
-        const suggestionIsQuestion = isQuestionQuery(suggestion);
-        return {
-          text: suggestion,
-          type: suggestionIsQuestion ? 'chat' : 'search'
-        };
-      }
-    }
-    
-    return null;
+  // Get suggestion info by index - now simply uses the actual suggestions array
+  const getSuggestionByIndex = (index: number): AutocompleteSuggestion | null => {
+    if (index < 0 || index >= currentSuggestions.length) return null;
+    return currentSuggestions[index] || null;
   };
 
   // Get the current suggestion type for UI updates
@@ -406,6 +385,10 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
       const selectedSuggestion = getSuggestionByIndex(selectedSuggestionIndex);
       
       if (selectedSuggestion) {
+        // Navigation suggestions should show as 'url'
+        if (selectedSuggestion.type === 'navigation') {
+          return 'url';
+        }
         // Check if the suggestion text is a URL
         const isURL = selectedSuggestion.text.includes('.') || selectedSuggestion.text.startsWith('http');
         return isURL ? 'url' : selectedSuggestion.type;
@@ -514,6 +497,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                       selectedIndex={selectedSuggestionIndex}
                       onSuggestionClick={handleSuggestionSelect}
                       onSuggestionHover={handleSuggestionHover}
+                      onSuggestionsBuilt={setCurrentSuggestions}
                     />
 
                     {/* Add subtle separator between suggestions and controls when suggestions are shown */}

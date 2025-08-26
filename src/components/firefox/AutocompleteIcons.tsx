@@ -27,3 +27,9 @@ export const SearchIcon: React.FC<{ className?: string }> = ({ className = '' })
     </svg>
   );
 };
+
+export const NavigationIcon: React.FC<{ className?: string }> = ({ className = '' }) => {
+  return (
+    <i className={`fa-solid fa-arrow-right ${className}`}></i>
+  );
+};

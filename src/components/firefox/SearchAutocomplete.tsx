@@ -1,10 +1,10 @@
 import React from 'react';
-import { ChatIcon, SearchIcon } from './AutocompleteIcons';
+import { ChatIcon, SearchIcon, NavigationIcon } from './AutocompleteIcons';
 import styles from './SearchAutocomplete.module.css';
 
 export interface AutocompleteSuggestion {
   text: string;
-  type: 'chat' | 'search';
+  type: 'chat' | 'search' | 'navigation';
   isSelected?: boolean;
 }
 
@@ -13,9 +13,39 @@ interface SearchAutocompleteProps {
   query: string;
   isVisible: boolean;
   selectedIndex: number;
-  onSuggestionClick: (suggestion: string, type: 'chat' | 'search') => void;
+  onSuggestionClick: (suggestion: string, type: 'chat' | 'search' | 'navigation') => void;
   onSuggestionHover: (index: number) => void;
+  onSuggestionsBuilt?: (suggestions: AutocompleteSuggestion[]) => void;
 }
+
+// Top US websites for prefix matching navigation suggestions
+const TOP_US_WEBSITES = [
+  'airbnb.com', 'amazon.com', 'apple.com', 'bing.com', 'craigslist.org',
+  'ebay.com', 'espn.com', 'etsy.com', 'facebook.com', 'github.com',
+  'gmail.com', 'google.com', 'instagram.com', 'linkedin.com', 'microsoft.com',
+  'netflix.com', 'pinterest.com', 'reddit.com', 'spotify.com', 'twitter.com',
+  'wikipedia.org', 'yahoo.com', 'youtube.com', 'zoom.us', 'adobe.com',
+  'airbnb.co', 'alibaba.com', 'americanexpress.com', 'att.com', 'bbc.com',
+  'bestbuy.com', 'blogspot.com', 'booking.com', 'chase.com', 'cnn.com',
+  'coinbase.com', 'costco.com', 'discord.com', 'dropbox.com', 'duckduckgo.com',
+  'expedia.com', 'flickr.com', 'ford.com', 'fox.com', 'glassdoor.com',
+  'godaddy.com', 'homedepot.com', 'hulu.com', 'ibm.com', 'ikea.com',
+  'imdb.com', 'indeed.com', 'intel.com', 'kayak.com', 'lowes.com',
+  'lyft.com', 'macys.com', 'mailchimp.com', 'mapquest.com', 'medium.com',
+  'nbc.com', 'nike.com', 'nytimes.com', 'oracle.com', 'paypal.com',
+  'quora.com', 'salesforce.com', 'shopify.com', 'slack.com', 'snapchat.com',
+  'southwest.com', 'starbucks.com', 'target.com', 'tiktok.com', 'tumblr.com',
+  'uber.com', 'ups.com', 'usps.com', 'verizon.com', 'walmart.com',
+  'washingtonpost.com', 'wellsfargo.com', 'whatsapp.com', 'x.com', 'zillow.com'
+];
+
+// Helper function to find website matches for navigation suggestions
+export const findWebsiteMatches = (query: string): string[] => {
+  const lowerQuery = query.toLowerCase().trim();
+  return TOP_US_WEBSITES
+    .filter(site => site.toLowerCase().startsWith(lowerQuery))
+    .slice(0, 3); // Limit to top 3 matches
+};
 
 // Helper function to detect if a query is likely a question
 export const isQuestionQuery = (query: string): boolean => {
@@ -46,6 +76,7 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
   selectedIndex,
   onSuggestionClick,
   onSuggestionHover,
+  onSuggestionsBuilt,
 }, ref) => {
   if (!isVisible || !query.trim()) {
     return null;
@@ -54,8 +85,19 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
   // Detect question words to determine if this is likely a question
   const isQuestion = isQuestionQuery(query);
   
-  // Build the full suggestion list based on whether it's a question
+  // Check for website navigation matches
+  const websiteMatches = findWebsiteMatches(query);
+  
+  // Build the full suggestion list based on priority order
   const allSuggestions: AutocompleteSuggestion[] = [];
+  
+  // Add website navigation suggestions first (highest priority)
+  websiteMatches.forEach(website => {
+    allSuggestions.push({
+      text: website,
+      type: 'navigation',
+    });
+  });
   
   if (isQuestion) {
     // For questions: Chat first, then Google Search
@@ -94,6 +136,11 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
     return null;
   }
 
+  // Notify parent of the built suggestions for keyboard navigation
+  React.useEffect(() => {
+    onSuggestionsBuilt?.(allSuggestions);
+  }, [onSuggestionsBuilt, allSuggestions]);
+
   const highlightMatchedText = (text: string, query: string) => {
     if (!query || text === query) return text;
     
@@ -120,6 +167,8 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
     switch (type) {
       case 'search':
         return <SearchIcon />;
+      case 'navigation':
+        return <NavigationIcon />;
       case 'chat':
       default:
         return <ChatIcon className="opacity-50" />;
@@ -147,6 +196,11 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
             </>
           );
       }
+    }
+    
+    // For navigation suggestions, just show the website without suffix
+    if (suggestion.type === 'navigation') {
+      return highlightMatchedText(suggestion.text, query);
     }
     
     // For Google autocomplete results, just show the text without suffix
