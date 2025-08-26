@@ -1,19 +1,9 @@
 import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react'
 import { cn } from '~/lib/utils'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu'
 import type { AddressBarProps as BaseAddressBarProps } from '~/types/browser'
 
 interface AddressBarProps extends BaseAddressBarProps {
   showSecurity?: boolean | undefined
-  onNewTabBelow?: () => void
-  onCompareTabs?: () => void
-  onCloseBothTabs?: () => void
-  showSplitView?: boolean
 }
 
 export interface AddressBarHandle {
@@ -24,11 +14,7 @@ export const AddressBar = forwardRef<AddressBarHandle, AddressBarProps>(function
   url = '', 
   onNavigate,
   showSecurity = true,
-  className,
-  onNewTabBelow,
-  onCompareTabs,
-  onCloseBothTabs,
-  showSplitView = true
+  className
 }, ref) {
   const [value, setValue] = useState(url === 'about:blank' ? '' : url)
   const [isFocused, setIsFocused] = useState(url === 'about:blank')
@@ -178,32 +164,6 @@ export const AddressBar = forwardRef<AddressBarHandle, AddressBarProps>(function
       )}
       
       <div className="flex items-center px-1">
-        {showSplitView && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button 
-                type="button"
-                className="w-7 h-6 flex items-center justify-center rounded hover:bg-[rgba(21,20,26,0.07)]"
-              >
-                <SplitViewIcon />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[230px]">
-              <DropdownMenuItem onClick={onNewTabBelow}>
-                New Tab Below
-              </DropdownMenuItem>
-              <div className="h-px bg-[#cfcfd8] mx-2 my-1" />
-              <DropdownMenuItem onClick={onCompareTabs}>
-                <SparklesIcon className="mr-1.5 h-4 w-4" />
-                Compare Tabs
-              </DropdownMenuItem>
-              <div className="h-px bg-[#cfcfd8] mx-2 my-1" />
-              <DropdownMenuItem onClick={onCloseBothTabs}>
-                Close Both Tabs
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
         <button 
           type="button"
           className="w-7 h-6 flex items-center justify-center rounded hover:bg-[rgba(21,20,26,0.07)]"
@@ -239,30 +199,10 @@ function PermissionsIcon() {
   )
 }
 
-function SplitViewIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <g id="Split_View_16">
-        <path d="M12.7931 13H1.2069C0.54069 13 0 12.4667 0 11.8095V4.19048C0 3.53333 0.54069 3 1.2069 3H12.7931C13.4593 3 14 3.53333 14 4.19048V11.8095C14 12.4667 13.4593 13 12.7931 13Z" stroke="#5B5B66" strokeWidth="1.5" strokeMiterlimit="10" strokeLinejoin="round"/>
-        <path d="M14 3H7V13H14V3Z" fill="#5B5B66"/>
-        <path d="M8 0H6V16H8V0Z" fill="#E9E9EB"/>
-      </g>
-    </svg>
-  )
-}
-
 function StarIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path d="M4.48722 15.499C4.15122 15.499 3.81622 15.395 3.53022 15.186C3.26553 14.9952 3.06463 14.7289 2.95382 14.422C2.84302 14.1151 2.82747 13.7819 2.90922 13.466L3.76922 10.091L1.08922 7.865C0.837588 7.6577 0.654449 7.37923 0.563801 7.06606C0.473153 6.7529 0.479224 6.41966 0.581218 6.11C0.68104 5.79939 0.872269 5.52612 1.1299 5.32594C1.38753 5.12576 1.69957 5.00798 2.02522 4.988L5.50022 4.763L6.78822 1.526C7.03722 0.903 7.63122 0.5 8.30222 0.5C8.97322 0.5 9.56722 0.903 9.81622 1.526L11.1042 4.763L14.5792 4.988C14.9049 5.00784 15.217 5.12557 15.4747 5.32577C15.7323 5.52597 15.9235 5.79931 16.0232 6.11C16.1253 6.42005 16.1313 6.7537 16.0404 7.06722C15.9496 7.38074 15.7662 7.65951 15.5142 7.867L12.8342 10.092L13.6942 13.467C13.776 13.7829 13.7604 14.1161 13.6496 14.423C13.5388 14.7299 13.3379 14.9962 13.0732 15.187C12.81 15.3801 12.4946 15.489 12.1684 15.4996C11.8421 15.5101 11.5203 15.4217 11.2452 15.246L8.30222 13.385L5.35822 15.246C5.09767 15.411 4.79564 15.4988 4.48722 15.499V15.499ZM8.30222 1.75C8.22592 1.74804 8.15093 1.77004 8.08779 1.81291C8.02465 1.85578 7.97654 1.91736 7.95022 1.989L6.51622 5.592L5.97522 5.985L2.10522 6.236C2.029 6.23906 1.95564 6.26587 1.8954 6.31266C1.83516 6.35946 1.79104 6.42391 1.76922 6.497C1.74405 6.56877 1.74199 6.64662 1.76333 6.71962C1.78468 6.79262 1.82835 6.8571 1.88822 6.904L4.87222 9.383L5.07822 10.018L4.12022 13.776C4.09961 13.8493 4.10252 13.9273 4.12853 13.9988C4.15454 14.0704 4.20235 14.132 4.26522 14.175C4.32822 14.222 4.49522 14.314 4.69122 14.189L7.96922 12.118H8.63722L11.9152 14.189C11.9787 14.2316 12.054 14.2532 12.1305 14.2506C12.2069 14.2481 12.2806 14.2217 12.3412 14.175C12.4036 14.1314 12.4509 14.0695 12.4765 13.9978C12.5021 13.9261 12.5048 13.8483 12.4842 13.775L11.5262 10.017L11.7322 9.382L14.7162 6.904C14.7763 6.85703 14.8201 6.79238 14.8414 6.71917C14.8628 6.64596 14.8606 6.5679 14.8352 6.496C14.8133 6.42298 14.7691 6.35862 14.7089 6.31184C14.6487 6.26507 14.5754 6.23821 14.4992 6.235L10.6302 5.984L10.0892 5.591L8.65422 1.988C8.62748 1.91672 8.57923 1.85552 8.51616 1.81288C8.4531 1.77023 8.37833 1.74826 8.30222 1.75V1.75Z" fill="#5B5B66"/>
-    </svg>
-  )
-}
-
-function SparklesIcon({ className }: { className?: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={className}>
-      <path d="M7.73633 0.925292C7.73633 0.925292 6.61163 4.61089 3.10803 8.11359C-0.394574 11.6172 0.925325 13.5579 0.925325 13.5579C0.925325 13.5579 2.86802 14.8758 6.37062 11.3743C9.87432 7.87269 13.5579 6.74909 13.5579 6.74909C13.5579 6.74909 11.6194 5.82629 9.13112 6.58879C8.88832 6.66449 8.75073 6.90839 8.80463 7.15449L9.28123 9.26729C9.33513 9.51119 9.19972 9.75509 8.96032 9.83629C8.91302 9.85219 8.86462 9.86039 8.81623 9.86039C8.61953 9.86039 8.43433 9.74219 8.36223 9.54989L7.11473 6.14859C7.02673 5.91139 7.12373 5.64949 7.34363 5.52269C9.85242 4.12199 13.0729 4.81169 13.0729 4.81169C13.0729 4.81169 12.7543 1.70039 9.25022 5.20319C5.74833 8.70709 4.62253 12.3918 4.62253 12.3918C4.62253 12.3918 7.73633 11.0718 11.239 7.56809C14.7427 4.06449 15.0634 0.0585938 15.0634 0.0585938C15.0634 0.0585938 13.1236 -1.26021 9.61952 2.24349C6.11703 5.74609 7.73633 0.925292 7.73633 0.925292Z" fill="#5B5B66"/>
     </svg>
   )
 }

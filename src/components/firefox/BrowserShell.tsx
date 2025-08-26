@@ -9,10 +9,6 @@ import { PlusIcon } from '~/components/icons'
 import type { BrowserShellProps as BaseBrowserShellProps } from '~/types/browser'
 
 interface BrowserShellProps extends BaseBrowserShellProps {
-  onNewTabBelow?: () => void
-  onCompareTabs?: () => void
-  onCloseBothTabs?: () => void
-  showSplitView?: boolean
   hideToolbar?: boolean
   smartWindowMode?: boolean
   isFirefoxViewActive?: boolean
@@ -35,10 +31,6 @@ export const BrowserShell = forwardRef<AddressBarHandle, BrowserShellProps>(func
   canGoBack = false,
   canGoForward = false,
   className,
-  onNewTabBelow,
-  onCompareTabs,
-  onCloseBothTabs,
-  showSplitView,
   onSidebarToggle,
   hideToolbar = false,
   smartWindowMode = false,
@@ -47,7 +39,7 @@ export const BrowserShell = forwardRef<AddressBarHandle, BrowserShellProps>(func
 }, ref) {
   return (
     <div className={cn(
-      "firefox-ui rounded-xl shadow-2xl overflow-hidden flex flex-col",
+      "firefox-ui rounded-lg shadow-2xl overflow-hidden flex flex-col",
       "border-2 border-gray-300",
       // Default background - Smart Window gradient handled via CSS
       "bg-[#f9f9fb]",
@@ -103,10 +95,6 @@ export const BrowserShell = forwardRef<AddressBarHandle, BrowserShellProps>(func
                 canGoBack={canGoBack}
                 canGoForward={canGoForward}
                 className="shrink-0"
-                onNewTabBelow={onNewTabBelow}
-                onCompareTabs={onCompareTabs}
-                onCloseBothTabs={onCloseBothTabs}
-                showSplitView={showSplitView}
                 onSidebarToggle={onSidebarToggle}
                 smartMode={smartWindowMode}
               />

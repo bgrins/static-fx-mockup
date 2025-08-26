@@ -13,7 +13,7 @@ export const SmartToolbar = forwardRef<HTMLDivElement, SmartToolbarProps>(functi
   className
 }, ref) {
   return (
-    <div ref={ref} className={cn("h-10 flex items-center gap-1 px-2 py-1 bg-white justify-between", className)}>
+    <div ref={ref} className={cn("h-10 flex items-center gap-1 px-2 py-1 bg-white justify-between rounded-t-xl", className)}>
       {/* Left - Hamburger menu */}
       <div className="flex items-center gap-1">
         <button

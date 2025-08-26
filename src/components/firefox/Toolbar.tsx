@@ -11,10 +11,6 @@ import {
 import type { ToolbarProps as BaseToolbarProps } from '~/types/browser'
 
 interface ToolbarProps extends BaseToolbarProps {
-  onNewTabBelow?: () => void
-  onCompareTabs?: () => void
-  onCloseBothTabs?: () => void
-  showSplitView?: boolean
   smartMode?: boolean
 }
 
@@ -28,20 +24,16 @@ export const Toolbar = forwardRef<AddressBarHandle, ToolbarProps>(function Toolb
   canGoBack = false,
   canGoForward = false,
   className,
-  onNewTabBelow,
-  onCompareTabs,
-  onCloseBothTabs,
-  showSplitView,
   onSidebarToggle,
   smartMode = false
 }, ref) {
   console.log('[TOOLBAR] Props received:', { canGoBack, canGoForward, url });
   return (
-    <div className={cn("h-10 flex items-center gap-1 px-2 py-1", className)}>
+    <div className={cn("h-10 flex items-center gap-1 px-2 py-1", smartMode && "bg-white rounded-tl-lg border-l border-t border-b border-black/5", className)}>
       {smartMode ? (
         /* Smart mode: Show URL bar and navigation controls WITHOUT toolbar actions */
         <>
-          {/* Navigation controls */}
+          {/* Navigation controls with refresh button */}
           <div className="flex items-center gap-1">
             <button 
               className="w-8 h-8 flex items-center justify-center rounded hover:bg-[rgba(21,20,26,0.07)] disabled:opacity-50 nav-back"
@@ -60,6 +52,14 @@ export const Toolbar = forwardRef<AddressBarHandle, ToolbarProps>(function Toolb
             >
               <ForwardArrowIcon />
             </button>
+            
+            <button
+              className="w-8 h-8 flex items-center justify-center rounded hover:bg-[rgba(21,20,26,0.07)]"
+              onClick={onRefresh}
+              title="Refresh"
+            >
+              <RefreshIcon />
+            </button>
           </div>
 
           {/* URL bar in smart mode */}
@@ -68,22 +68,7 @@ export const Toolbar = forwardRef<AddressBarHandle, ToolbarProps>(function Toolb
               ref={ref}
               url={url} 
               onNavigate={onNavigate}
-              onNewTabBelow={onNewTabBelow}
-              onCompareTabs={onCompareTabs}
-              onCloseBothTabs={onCloseBothTabs}
-              showSplitView={showSplitView}
             />
-          </div>
-
-          {/* Refresh button */}
-          <div className="flex items-center gap-1">
-            <button
-              className="w-8 h-8 flex items-center justify-center rounded hover:bg-[rgba(21,20,26,0.07)]"
-              onClick={onRefresh}
-              title="Refresh"
-            >
-              <RefreshIcon />
-            </button>
           </div>
           {/* NO ToolbarActions here - they're in the tab strip */}
         </>
@@ -132,10 +117,6 @@ export const Toolbar = forwardRef<AddressBarHandle, ToolbarProps>(function Toolb
               ref={ref}
               url={url} 
               onNavigate={onNavigate}
-              onNewTabBelow={onNewTabBelow}
-              onCompareTabs={onCompareTabs}
-              onCloseBothTabs={onCloseBothTabs}
-              showSplitView={showSplitView}
             />
           </div>
           
