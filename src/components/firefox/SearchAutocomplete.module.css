@@ -1,24 +1,19 @@
 /* Search Autocomplete Dropdown */
 .autocompleteContainer {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
+  position: relative;
   z-index: 50;
-  margin-top: 2px;
+  margin: 0;
 }
 
 .suggestionsList {
-  background: white;
-  border: 1px solid #eab2f7;
-  border-radius: 18px;
-  box-shadow: 
-    0 0.25px 0.75px 0 rgba(0, 0, 0, 0.05),
-    0 2px 20px 0 rgba(255, 82, 255, 0.15);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   max-height: 320px;
   overflow-y: auto;
   margin: 0;
-  padding: 16px;
+  padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -28,7 +23,7 @@
 .suggestionItem {
   display: flex;
   align-items: center;
-  padding: 10px;
+  padding: 10px 0;
   cursor: pointer;
   transition: background-color 150ms;
   color: #15141a;
@@ -36,17 +31,19 @@
   font-size: 15px;
   line-height: 1;
   border-radius: 8px;
-  margin: 0;
+  margin: 0 10px;
   gap: 8px;
 }
 
-.suggestionItem:hover,
-.suggestionItemSelected {
+.suggestionItem:hover {
   background-color: rgba(21, 20, 26, 0.05);
 }
 
 .suggestionItemSelected {
-  background-color: rgba(21, 20, 26, 0.08);
+  background-color: rgba(221, 207, 255, 0.8);
+  border-radius: 8px;
+  margin: 0 6px;
+  padding: 10px 4px;
 }
 
 .suggestionItemHighlighted {

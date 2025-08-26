@@ -4,7 +4,7 @@ import styles from './SearchAutocomplete.module.css';
 
 export interface AutocompleteSuggestion {
   text: string;
-  type: 'chat' | 'google-search' | 'google-result';
+  type: 'chat' | 'google-search';
   isSelected?: boolean;
 }
 
@@ -13,7 +13,7 @@ interface SearchAutocompleteProps {
   query: string;
   isVisible: boolean;
   selectedIndex: number;
-  onSuggestionClick: (suggestion: string, type: 'chat' | 'google-search' | 'google-result') => void;
+  onSuggestionClick: (suggestion: string, type: 'chat' | 'google-search') => void;
   onSuggestionHover: (index: number) => void;
 }
 
@@ -81,11 +81,12 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
     });
   }
   
-  // Add Google autocomplete results
+  // Add Google autocomplete results - determine type based on each suggestion
   googleSuggestions.forEach(suggestion => {
+    const suggestionIsQuestion = isQuestionQuery(suggestion);
     allSuggestions.push({
       text: suggestion,
-      type: 'google-result',
+      type: suggestionIsQuestion ? 'chat' : 'google-search',
     });
   });
 
@@ -120,32 +121,36 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
       case 'google-search':
         return <GoogleIcon />;
       case 'chat':
-      case 'google-result':
       default:
         return <ChatIcon className="opacity-50" />;
     }
   };
 
   const getSuggestionLabel = (suggestion: AutocompleteSuggestion, query: string) => {
-    switch (suggestion.type) {
-      case 'chat':
-        return (
-          <>
-            <span>{highlightMatchedText(suggestion.text, query)}</span>
-            <span className={styles.suggestionSuffix}> - Chat</span>
-          </>
-        );
-      case 'google-search':
-        return (
-          <>
-            <span>{highlightMatchedText(suggestion.text, query)}</span>
-            <span className={styles.suggestionSuffix}> - Search with Google</span>
-          </>
-        );
-      case 'google-result':
-      default:
-        return highlightMatchedText(suggestion.text, query);
+    // Only show suffix for the original query (first two suggestions)
+    const isOriginalQuery = suggestion.text === query;
+    
+    if (isOriginalQuery) {
+      switch (suggestion.type) {
+        case 'chat':
+          return (
+            <>
+              <span>{highlightMatchedText(suggestion.text, query)}</span>
+              <span className={styles.suggestionSuffix}> - Chat</span>
+            </>
+          );
+        case 'google-search':
+          return (
+            <>
+              <span>{highlightMatchedText(suggestion.text, query)}</span>
+              <span className={styles.suggestionSuffix}> - Search with Google</span>
+            </>
+          );
+      }
     }
+    
+    // For Google autocomplete results, just show the text without suffix
+    return highlightMatchedText(suggestion.text, query);
   };
 
   return (

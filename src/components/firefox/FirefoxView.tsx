@@ -61,6 +61,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   // Store command IDs to map responses back to tabs
   const [commandToTabMap, setCommandToTabMap] = useState<{ [key: string]: string }>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [displayedQuery, setDisplayedQuery] = useState('');
   const [googleSuggestions, setGoogleSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
@@ -200,6 +201,13 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
     };
   }, []);
 
+  // Sync displayedQuery with searchQuery when suggestions are hidden
+  useEffect(() => {
+    if (!showSuggestions || selectedSuggestionIndex === -1) {
+      setDisplayedQuery(searchQuery);
+    }
+  }, [searchQuery, showSuggestions, selectedSuggestionIndex]);
+
   // Debounced function to fetch autocomplete suggestions
   const fetchSuggestions = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -247,6 +255,8 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
+    setDisplayedQuery(value);
+    setSelectedSuggestionIndex(-1); // Reset selection when user types
 
     // Clear existing debounce timer
     if (debounceTimerRef.current) {
@@ -265,48 +275,42 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
       return;
     }
 
-    // Calculate total suggestions: Chat + Google Search + Google results
+    // Calculate total suggestions: 2 built-in + Google suggestions
     const totalSuggestions = 2 + googleSuggestions.length;
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedSuggestionIndex(prev => 
-          prev < totalSuggestions - 1 ? prev + 1 : 0
-        );
+        setSelectedSuggestionIndex(prev => {
+          const newIndex = prev < totalSuggestions - 1 ? prev + 1 : 0;
+          // Update displayed query based on new selection
+          const selectedSuggestion = getSuggestionByIndex(newIndex);
+          if (selectedSuggestion) {
+            setDisplayedQuery(selectedSuggestion.text);
+          }
+          return newIndex;
+        });
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedSuggestionIndex(prev => 
-          prev > 0 ? prev - 1 : totalSuggestions - 1
-        );
+        setSelectedSuggestionIndex(prev => {
+          const newIndex = prev > 0 ? prev - 1 : totalSuggestions - 1;
+          // Update displayed query based on new selection
+          const selectedSuggestion = getSuggestionByIndex(newIndex);
+          if (selectedSuggestion) {
+            setDisplayedQuery(selectedSuggestion.text);
+          }
+          return newIndex;
+        });
         break;
       case 'Enter':
         e.preventDefault();
         if (selectedSuggestionIndex >= 0) {
-          // Determine suggestion type and text based on index
-          // Check if query is a question to match the same logic as SearchAutocomplete
-          const isQuestion = isQuestionQuery(searchQuery);
-          
-          let suggestionText: string;
-          let suggestionType: 'chat' | 'google-search' | 'google-result';
-          
-          if (selectedSuggestionIndex === 0) {
-            // First option: Chat for questions, Google Search for non-questions
-            suggestionText = searchQuery;
-            suggestionType = isQuestion ? 'chat' : 'google-search';
-          } else if (selectedSuggestionIndex === 1) {
-            // Second option: Google Search for questions, Chat for non-questions
-            suggestionText = searchQuery;
-            suggestionType = isQuestion ? 'google-search' : 'chat';
-          } else {
-            // Google result
-            const googleIndex = selectedSuggestionIndex - 2;
-            suggestionText = googleSuggestions[googleIndex] || searchQuery;
-            suggestionType = 'google-result';
+          // Get the selected suggestion
+          const selectedSuggestion = getSuggestionByIndex(selectedSuggestionIndex);
+          if (selectedSuggestion) {
+            handleSuggestionSelect(selectedSuggestion.text, selectedSuggestion.type);
           }
-          
-          handleSuggestionSelect(suggestionText, suggestionType);
         } else {
           handleSearchSubmit(e);
         }
@@ -314,13 +318,15 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
       case 'Escape':
         setShowSuggestions(false);
         setSelectedSuggestionIndex(-1);
+        setDisplayedQuery(searchQuery); // Reset to original query
         break;
     }
   };
 
   // Handle suggestion selection
-  const handleSuggestionSelect = (suggestion: string, type: 'chat' | 'google-search' | 'google-result') => {
+  const handleSuggestionSelect = (suggestion: string, type: 'chat' | 'google-search') => {
     setSearchQuery(suggestion);
+    setDisplayedQuery(suggestion);
     setShowSuggestions(false);
     setSelectedSuggestionIndex(-1);
     
@@ -334,9 +340,6 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
         navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(suggestion)} chat`;
         break;
       case 'google-search':
-        navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(suggestion)}`;
-        break;
-      case 'google-result':
       default:
         // Check if it looks like a URL
         const isURL = suggestion.includes('.') || suggestion.startsWith('http');
@@ -348,27 +351,91 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
 
     onNewTab?.(navigateUrl);
     setSearchQuery('');
+    setDisplayedQuery('');
   };
 
   // Handle mouse hover over suggestions
   const handleSuggestionHover = (index: number) => {
     setSelectedSuggestionIndex(index);
+    
+    // Update displayed query based on the hovered suggestion
+    const selectedSuggestion = getSuggestionByIndex(index);
+    if (selectedSuggestion) {
+      setDisplayedQuery(selectedSuggestion.text);
+    }
+  };
+
+  // Get suggestion info by index (matching SearchAutocomplete logic)
+  const getSuggestionByIndex = (index: number): { text: string; type: 'chat' | 'google-search' } | null => {
+    if (!searchQuery.trim() || index < 0) return null;
+    
+    const isQuestion = isQuestionQuery(searchQuery);
+    const totalBuiltInSuggestions = 2; // Chat and Google Search
+    
+    if (index < totalBuiltInSuggestions) {
+      // First two are always the original query with different types
+      if (isQuestion) {
+        return index === 0 ? { text: searchQuery, type: 'chat' } : { text: searchQuery, type: 'google-search' };
+      } else {
+        return index === 0 ? { text: searchQuery, type: 'google-search' } : { text: searchQuery, type: 'chat' };
+      }
+    }
+    
+    // Google autocomplete results
+    const googleIndex = index - totalBuiltInSuggestions;
+    if (googleIndex >= 0 && googleIndex < googleSuggestions.length) {
+      const suggestion = googleSuggestions[googleIndex];
+      if (suggestion) {
+        const suggestionIsQuestion = isQuestionQuery(suggestion);
+        return {
+          text: suggestion,
+          type: suggestionIsQuestion ? 'chat' : 'google-search'
+        };
+      }
+    }
+    
+    return null;
+  };
+
+  // Get the current suggestion type for UI updates
+  const getCurrentSuggestionType = (): 'chat' | 'google-search' | 'url' | null => {
+    if (!searchQuery.trim()) return null;
+    
+    // If suggestions are shown and something is selected
+    if (showSuggestions && selectedSuggestionIndex >= 0) {
+      const selectedSuggestion = getSuggestionByIndex(selectedSuggestionIndex);
+      
+      if (selectedSuggestion) {
+        // Check if the suggestion text is a URL
+        const isURL = selectedSuggestion.text.includes('.') || selectedSuggestion.text.startsWith('http');
+        return isURL ? 'url' : selectedSuggestion.type;
+      }
+    }
+    
+    // Check if current search query is a URL
+    const isURL = searchQuery.includes('.') || searchQuery.startsWith('http');
+    if (isURL) return 'url';
+    
+    // Default behavior when no suggestions or nothing selected
+    const isQuestion = isQuestionQuery(searchQuery);
+    return isQuestion ? 'chat' : 'google-search';
   };
 
   // Handle search form submission - Firefox View should NEVER navigate itself
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
       
-    if (searchQuery && searchQuery.trim()) {
+    if (displayedQuery && displayedQuery.trim()) {
       // Default search behavior - search with Google
-      const isURL = searchQuery.includes('.') || searchQuery.startsWith('http');
+      const isURL = displayedQuery.includes('.') || displayedQuery.startsWith('http');
       const navigateUrl = isURL
-        ? (searchQuery.startsWith('http') ? searchQuery : `https://${searchQuery}`)
-        : `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+        ? (displayedQuery.startsWith('http') ? displayedQuery : `https://${displayedQuery}`)
+        : `https://www.google.com/search?q=${encodeURIComponent(displayedQuery)}`;
 
       // Firefox View always creates new tabs with the URL directly
       onNewTab?.(navigateUrl);
       setSearchQuery('');
+      setDisplayedQuery('');
       setShowSuggestions(false);
       setSelectedSuggestionIndex(-1);
     }
@@ -424,7 +491,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                     <input
                       ref={searchInputRef}
                       type="text"
-                      value={searchQuery}
+                      value={displayedQuery}
                       onChange={handleSearchInputChange}
                       onKeyDown={handleSearchKeyDown}
                       onFocus={() => {
@@ -437,6 +504,8 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                       className={styles.searchInput}
                       autoComplete="off"
                     />
+
+                    {/* Autocomplete suggestions within the same container */}
                     <SearchAutocomplete
                       ref={autocompleteRef}
                       googleSuggestions={googleSuggestions}
@@ -446,31 +515,78 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                       onSuggestionClick={handleSuggestionSelect}
                       onSuggestionHover={handleSuggestionHover}
                     />
+
+                    {/* Add subtle separator between suggestions and controls when suggestions are shown */}
+                    {showSuggestions && searchQuery.trim() && (
+                      <div style={{ 
+                        height: '1px', 
+                        background: 'rgba(21, 20, 26, 0.1)', 
+                        margin: '8px 10px' 
+                      }} />
+                    )}
+
                     <div className={styles.search_controls}>
                       <button
                         className={styles.clear_button}
-
+                        type="button"
                       >
-                        <i className="fa-solid fa-plus mr-2"></i> Add image, tabs or files
+                        <i className="fa-solid fa-plus mr-2"></i> Add images, tabs, files
                       </button>
 
                       <div className="flex items-center gap-4">
                         <button
                           className={styles.clear_button}
-
+                          type="button"
                         >
                           <i className="fa-solid fa-microphone"></i>
                         </button>
-                        <button
-                          className={styles.primary_button}
-
-                        >
-                          <i className="fa-solid fa-arrow-right"></i>
-                        </button>
+                        
+                        {(() => {
+                          const suggestionType = getCurrentSuggestionType();
+                          
+                          if (suggestionType === 'chat') {
+                            return (
+                              <button
+                                className={styles.primary_button}
+                                type="submit"
+                              >
+                                <span>Ask</span>
+                                <i className="fa-solid fa-comment ml-2"></i>
+                              </button>
+                            );
+                          } else if (suggestionType === 'google-search') {
+                            return (
+                              <button
+                                className={styles.primary_button}
+                                type="submit"
+                              >
+                                <span>Search</span>
+                                <i className="fa-solid fa-magnifying-glass ml-2"></i>
+                              </button>
+                            );
+                          } else if (suggestionType === 'url') {
+                            return (
+                              <button
+                                className={styles.primary_button}
+                                type="submit"
+                              >
+                                <span>Go</span>
+                                <i className="fa-solid fa-arrow-right ml-2"></i>
+                              </button>
+                            );
+                          } else {
+                            return (
+                              <button
+                                className={styles.primary_button}
+                                type="submit"
+                              >
+                                <i className="fa-solid fa-arrow-right"></i>
+                              </button>
+                            );
+                          }
+                        })()}
                       </div>
                     </div>
-
-                    
                   </div>
 
                   {/* ACTION BUTTONS  */}
