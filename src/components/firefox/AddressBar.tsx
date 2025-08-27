@@ -1,6 +1,7 @@
 import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react'
 import { cn } from '~/lib/utils'
 import type { AddressBarProps as BaseAddressBarProps } from '~/types/browser'
+import { processNavigationInput, SEARCH_ENGINES, getSearchEngine } from '~/lib/search-engines'
 
 interface AddressBarProps extends BaseAddressBarProps {
   showSecurity?: boolean | undefined
@@ -39,43 +40,7 @@ export const AddressBar = forwardRef<AddressBarHandle, AddressBarProps>(function
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Check if the input looks like a URL
-    const isURL = (input: string): boolean => {
-      // Check for protocol
-      if (input.startsWith('http://') || input.startsWith('https://')) {
-        return true
-      }
-      
-      // Check for common TLDs or domain patterns
-      const domainPattern = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:[0-9]+)?(\/.*)?$/
-      if (domainPattern.test(input)) {
-        return true
-      }
-      
-      // Check for localhost or IP addresses
-      if (input.startsWith('localhost') || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(input)) {
-        return true
-      }
-      
-      // Check for about: pages
-      if (input.startsWith('about:')) {
-        return true
-      }
-      
-      return false
-    }
-    
-    let navigateUrl = value
-    
-    if (!isURL(value) && value.trim() !== '') {
-      // If not a URL, search on DuckDuckGo
-      navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(value)}`
-    } else if (isURL(value) && !value.startsWith('http://') && !value.startsWith('https://') && !value.startsWith('about:')) {
-      // Add https:// if missing
-      navigateUrl = `https://${value}`
-    }
-    
+    const navigateUrl = processNavigationInput(value)
     onNavigate?.(navigateUrl)
   }
   
@@ -140,7 +105,7 @@ export const AddressBar = forwardRef<AddressBarHandle, AddressBarProps>(function
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => setIsFocused(false)}
           className="firefox-address-bar__input flex-1 bg-transparent outline-none text-[15px] font-sans px-2 text-[#15141a]"
-          placeholder="Search or enter address"
+          placeholder={SEARCH_ENGINES[getSearchEngine()].placeholder}
           data-testid="address-bar-input"
           autoFocus
         />
@@ -158,7 +123,7 @@ export const AddressBar = forwardRef<AddressBarHandle, AddressBarProps>(function
               <span className="text-gray-500 truncate url-path">{path}</span>
             </div>
           ) : (
-            <span className="text-gray-400">Search or enter address</span>
+            <span className="text-gray-400">{SEARCH_ENGINES[getSearchEngine()].placeholder}</span>
           )}
         </div>
       )}

@@ -5,6 +5,7 @@ import { useDebug } from "~/contexts/useDebug";
 import { useProfile } from "~/hooks/useProfile";
 import { Link } from "@tanstack/react-router";
 import {SettingsTool} from "~/components/assistant-ui/settings-tool";
+import { SEARCH_ENGINES, getSearchEngine, setSearchEngine, type SearchEngine } from "~/lib/search-engines";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { debugInfo } = useDebug();
   const { selectedProfile, selectProfile, availableProfiles } = useProfile();
   const [activeTab, setActiveTab] = useState<TabId>("general");
+  const [selectedSearchEngine, setSelectedSearchEngine] = useState<SearchEngine>(getSearchEngine());
 
   // Handle Esc key to close modal
   React.useEffect(() => {
@@ -51,9 +53,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     window.location.reload();
   };
 
+  const handleSearchEngineChange = (engine: SearchEngine) => {
+    setSelectedSearchEngine(engine);
+    setSearchEngine(engine);
+  };
+
   const states = [
     { id: "default", label: "Default", description: "Fresh browser state", link: "/" },
-    { id: "split", label: "Split View", description: "Two tabs side by side", link: "/split-view" },
+    { id: "autumn-search", label: "Autumn Search", description: "DuckDuckGo search with sidebar open", link: "/autumn-search" },
   ];
 
 
@@ -113,8 +120,31 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div className="p-6 space-y-8">
               {activeTab === "general" && (
                 <>
-                  {/* Starting States */}
+                  {/* Search Engine Selection */}
                   <section>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Default Search Engine</h3>
+                    <div className="flex gap-3">
+                      {Object.values(SEARCH_ENGINES).map((engine) => (
+                        <button
+                          key={engine.id}
+                          onClick={() => handleSearchEngineChange(engine.id)}
+                          className={`px-4 py-2 rounded-md border transition-all ${
+                            selectedSearchEngine === engine.id
+                              ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {engine.name}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Choose your preferred search engine for web searches
+                    </p>
+                  </section>
+
+                  {/* Starting States */}
+                  <section className="border-t border-gray-200 pt-8">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Starting States</h3>
                     <div className="grid grid-cols-2 gap-4">
                       {states.map((state) => (

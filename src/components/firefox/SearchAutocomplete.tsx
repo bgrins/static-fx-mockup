@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChatIcon, SearchIcon, NavigationIcon } from './AutocompleteIcons';
 import styles from './SearchAutocomplete.module.css';
+import { SEARCH_ENGINES, getSearchEngine } from '~/lib/search-engines';
 
 export interface AutocompleteSuggestion {
   text: string;
@@ -192,7 +193,7 @@ export const SearchAutocomplete = React.forwardRef<HTMLDivElement, SearchAutocom
           return (
             <>
               <span>{highlightMatchedText(suggestion.text, query)}</span>
-              <span className={styles.suggestionSuffix}> - Search with DuckDuckGo</span>
+              <span className={styles.suggestionSuffix}> - Search with {SEARCH_ENGINES[getSearchEngine()].name}</span>
             </>
           );
       }

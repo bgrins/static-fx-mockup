@@ -12,6 +12,7 @@ import { cn } from '~/lib/utils';
 import styles from './FirefoxView.module.css';
 import { CloseIcon } from '~/components/icons';
 import AiModeLogo from '../../assets/ai-mode-logo.png';
+import { getSearchUrl, isURL as checkIsURL, SEARCH_ENGINES, getSearchEngine } from '~/lib/search-engines';
 
 interface FirefoxViewProps {
   tabs: Tab[];
@@ -392,10 +393,10 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
       case 'search':
       default:
         // Check if it looks like a URL
-        const isURL = suggestion.includes('.') || suggestion.startsWith('http');
+        const isURL = checkIsURL(suggestion);
         navigateUrl = isURL
           ? (suggestion.startsWith('http') ? suggestion : `https://${suggestion}`)
-          : `https://duckduckgo.com?q=${encodeURIComponent(suggestion)}`;
+          : getSearchUrl(suggestion);
         break;
     }
 
@@ -441,7 +442,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
     }
     
     // Check if current search query is a URL
-    const isURL = searchQuery.includes('.') || searchQuery.startsWith('http');
+    const isURL = checkIsURL(searchQuery);
     if (isURL) return 'url';
     
     // Default behavior when no suggestions or nothing selected
@@ -480,11 +481,11 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
         return;
       }
       
-      // Default search behavior - search with Google
-      const isURL = displayedQuery.includes('.') || displayedQuery.startsWith('http');
+      // Default search behavior - use selected search engine
+      const isURL = checkIsURL(displayedQuery);
       const navigateUrl = isURL
         ? (displayedQuery.startsWith('http') ? displayedQuery : `https://${displayedQuery}`)
-        : `https://www.google.com/search?q=${encodeURIComponent(displayedQuery)}`;
+        : getSearchUrl(displayedQuery);
 
       // Firefox View always creates new tabs with the URL directly
       onNewTab?.(navigateUrl);
@@ -499,10 +500,10 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   const handleChatSuggestionClick = (suggestionType: 'search' | 'sites', query: string) => {
     let navigateUrl: string;
     if (suggestionType === 'search') {
-      navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+      navigateUrl = getSearchUrl(query);
     } else {
       // Open top news sites - could be a specific news aggregator
-      navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent('top news sites')}`;
+      navigateUrl = getSearchUrl('top news sites');
     }
     onNewTab?.(navigateUrl);
   };
@@ -583,7 +584,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                                   className="bg-[rgba(191,143,204,0.2)] border border-[rgba(125,32,124,0.15)] rounded-[58px] px-[17px] py-[14.516px] h-12 flex items-center gap-2 shadow-[0px_0.25px_0.75px_0px_rgba(0,0,0,0.05),0px_2px_6px_0px_rgba(0,0,0,0.1)] mix-blend-multiply hover:bg-[rgba(191,143,204,0.3)] transition-colors"
                                 >
                                   <SearchIcon className="w-4 h-4" />
-                                  <span className="text-[13px] text-[#15141a] font-['SF_Pro:Regular',_sans-serif]">Search with DuckDuckGo</span>
+                                  <span className="text-[13px] text-[#15141a] font-['SF_Pro:Regular',_sans-serif]">Search with {SEARCH_ENGINES[getSearchEngine()].name}</span>
                                 </button>
                                 <button
                                   onClick={() => handleChatSuggestionClick('sites', 'top news sites')}
@@ -618,7 +619,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                           setShowSuggestions(true);
                         }
                       }}
-                      placeholder={chatState.isActive ? "Ask more" : "Ask, search, or type a URL"}
+                      placeholder={chatState.isActive ? "Ask more" : SEARCH_ENGINES[getSearchEngine()].placeholder.replace('or enter address', '').trim()}
                       id="search-input"
                       className={styles.searchInput}
                       autoComplete="off"

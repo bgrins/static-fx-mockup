@@ -481,6 +481,7 @@ describe("Smart Window Functionality", () => {
       fireEvent.change(searchInput, { target: { value: "test search" } });
       fireEvent.submit(form!);
 
+      // Should use default search engine (DuckDuckGo)
       expect(onNewTab).toHaveBeenCalledWith("https://duckduckgo.com/?q=test%20search");
     });
 
