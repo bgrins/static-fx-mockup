@@ -3,7 +3,7 @@ import { useDebug } from "~/contexts/useDebug";
 import { useProxyTunnel } from "~/hooks/useProxyTunnel";
 import { useTabManager } from "~/hooks/useTabManager";
 import { urlToProxy } from "~/utils/proxy";
-import { ABOUT_PAGES, TabType, PROXY_MESSAGE_TYPES } from "~/constants/browser";
+import { ABOUT_PAGES, TabType, PROXY_MESSAGE_TYPES, type Tab } from "~/constants/browser";
 import {
   parseNavigationUrl,
   shouldHandleNavigationLocally,
@@ -18,6 +18,8 @@ import { DynamicFavicon, FirefoxFavicon } from "~/components/firefox/Favicons";
 
 interface UseBrowserCoreOptions {
   smartWindowMode?: boolean;
+  initialTabs?: Tab[];
+  initialActiveTabId?: string;
 }
 
 /**
@@ -25,7 +27,7 @@ interface UseBrowserCoreOptions {
  * This hook provides shared logic that can be used across different window types.
  */
 export function useBrowserCore(options: UseBrowserCoreOptions = {}) {
-  const { smartWindowMode = false } = options;
+  const { smartWindowMode = false, initialTabs } = options;
   const { setDebugInfo } = useDebug();
   const iframeRefs = React.useRef<{ [key: string]: HTMLIFrameElement | null }>({});
   const [pageContent, setPageContent] = React.useState<string>("");
@@ -45,7 +47,7 @@ export function useBrowserCore(options: UseBrowserCoreOptions = {}) {
     createTab,
     switchTab,
     reorderTabs,
-  } = useTabManager({ smartWindowMode });
+  } = useTabManager({ smartWindowMode, initialTabs });
 
   // Handle navigation
   const handleNavigate = React.useCallback(

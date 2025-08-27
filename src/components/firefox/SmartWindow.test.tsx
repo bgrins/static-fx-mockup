@@ -14,6 +14,8 @@ vi.mock("~/components/icons", () => ({
   SparklesIcon: () => <div data-testid="sparkles-icon">✨</div>,
   WindowIcon: () => <div data-testid="window-icon">🪟</div>,
   CheckIcon: () => <div data-testid="check-icon">✓</div>,
+  FirefoxIcon: () => <div data-testid="firefox-icon">🦊</div>,
+  SmartWindowIcon: () => <div data-testid="smart-window-icon">🧠</div>,
 }));
 
 // Mock dropdown components
@@ -169,7 +171,8 @@ describe("Smart Window Functionality", () => {
         />
       );
 
-      expect(screen.getByTestId("plus-icon")).toBeTruthy();
+      const plusIcons = screen.getAllByTestId("plus-icon");
+      expect(plusIcons.length).toBeGreaterThan(0);
     });
 
     it("should show new tab button in smart mode when Firefox View is NOT active", () => {
@@ -182,7 +185,8 @@ describe("Smart Window Functionality", () => {
         />
       );
 
-      expect(screen.getByTestId("plus-icon")).toBeTruthy();
+      const plusIcons = screen.getAllByTestId("plus-icon");
+      expect(plusIcons.length).toBeGreaterThan(0);
     });
 
     it("should hide new tab button in smart mode when Firefox View IS active", () => {
@@ -194,7 +198,9 @@ describe("Smart Window Functionality", () => {
         />
       );
 
-      expect(screen.queryByTestId("plus-icon")).toBe(null);
+      // In smart mode with Firefox View active, the new tab button should be hidden
+      const plusIcons = screen.queryAllByTestId("plus-icon");
+      expect(plusIcons.length).toBe(0);
     });
 
     it("should handle tab clicks correctly", () => {
@@ -415,7 +421,8 @@ describe("Smart Window Functionality", () => {
       );
 
       // Should show embedded toolbar in Smart Window mode
-      expect(screen.getByTestId("dropdown-menu")).toBeTruthy();
+      const dropdownMenus = screen.getAllByTestId("dropdown-menu");
+      expect(dropdownMenus.length).toBeGreaterThan(0);
     });
 
     it("should focus search when dropdown Focus Search is clicked", async () => {

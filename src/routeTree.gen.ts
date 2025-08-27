@@ -14,6 +14,7 @@ import { createServerRootRoute } from '@tanstack/react-start/server'
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SqliteVecDemoRouteImport } from './routes/sqlite-vec-demo'
 import { Route as LinkPreviewDemoRouteImport } from './routes/link-preview-demo'
+import { Route as AutumnSearchRouteImport } from './routes/autumn-search'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InferTestIndexRouteImport } from './routes/infer-test/index'
 import { Route as InferTestInferTestRouteImport } from './routes/infer-test/_infer-test'
@@ -37,6 +38,11 @@ const SqliteVecDemoRoute = SqliteVecDemoRouteImport.update({
 const LinkPreviewDemoRoute = LinkPreviewDemoRouteImport.update({
   id: '/link-preview-demo',
   path: '/link-preview-demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutumnSearchRoute = AutumnSearchRouteImport.update({
+  id: '/autumn-search',
+  path: '/autumn-search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -72,6 +78,7 @@ const ApiInferV1ChatCompletionsServerRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/autumn-search': typeof AutumnSearchRoute
   '/link-preview-demo': typeof LinkPreviewDemoRoute
   '/sqlite-vec-demo': typeof SqliteVecDemoRoute
   '/infer-test': typeof InferTestInferTestRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/autumn-search': typeof AutumnSearchRoute
   '/link-preview-demo': typeof LinkPreviewDemoRoute
   '/sqlite-vec-demo': typeof SqliteVecDemoRoute
   '/infer-test': typeof InferTestIndexRoute
@@ -86,6 +94,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/autumn-search': typeof AutumnSearchRoute
   '/link-preview-demo': typeof LinkPreviewDemoRoute
   '/sqlite-vec-demo': typeof SqliteVecDemoRoute
   '/infer-test': typeof InferTestRouteWithChildren
@@ -96,15 +105,22 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/autumn-search'
     | '/link-preview-demo'
     | '/sqlite-vec-demo'
     | '/infer-test'
     | '/infer-test/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/link-preview-demo' | '/sqlite-vec-demo' | '/infer-test'
+  to:
+    | '/'
+    | '/autumn-search'
+    | '/link-preview-demo'
+    | '/sqlite-vec-demo'
+    | '/infer-test'
   id:
     | '__root__'
     | '/'
+    | '/autumn-search'
     | '/link-preview-demo'
     | '/sqlite-vec-demo'
     | '/infer-test'
@@ -114,6 +130,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AutumnSearchRoute: typeof AutumnSearchRoute
   LinkPreviewDemoRoute: typeof LinkPreviewDemoRoute
   SqliteVecDemoRoute: typeof SqliteVecDemoRoute
   InferTestRoute: typeof InferTestRouteWithChildren
@@ -176,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/link-preview-demo'
       fullPath: '/link-preview-demo'
       preLoaderRoute: typeof LinkPreviewDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/autumn-search': {
+      id: '/autumn-search'
+      path: '/autumn-search'
+      fullPath: '/autumn-search'
+      preLoaderRoute: typeof AutumnSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -243,6 +267,7 @@ const InferTestRouteWithChildren = InferTestRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AutumnSearchRoute: AutumnSearchRoute,
   LinkPreviewDemoRoute: LinkPreviewDemoRoute,
   SqliteVecDemoRoute: SqliteVecDemoRoute,
   InferTestRoute: InferTestRouteWithChildren,

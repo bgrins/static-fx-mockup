@@ -245,7 +245,7 @@ describe("SettingsModal", () => {
     // Check for the starting states section
     expect(screen.getByText("Starting States")).toBeTruthy();
     expect(screen.getByText("Fresh browser state")).toBeTruthy();
-    expect(screen.getByText("Split View")).toBeTruthy();
-    expect(screen.getByText("Two tabs side by side")).toBeTruthy();
+    expect(screen.getByText("Autumn Search")).toBeTruthy();
+    expect(screen.getByText("DuckDuckGo search with sidebar open")).toBeTruthy();
   });
 });
