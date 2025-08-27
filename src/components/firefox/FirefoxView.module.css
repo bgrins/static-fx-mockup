@@ -182,10 +182,12 @@
 .searchSection {
   height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
 }
 
 .searchForm {
+  margin: auto;
   width: 100%;
   max-width: 42rem;
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { OpenGraphPreview } from './OpenGraphPreview';
 import { SearchAutocomplete, isQuestionQuery, type AutocompleteSuggestion } from './SearchAutocomplete';
+import { SearchIcon } from './AutocompleteIcons';
 import { extractOpenGraphFromHTML } from '~/utils/opengraph';
 import { GoogleAutocompleteService } from '~/services/googleAutocomplete';
 import { PROXY_MESSAGE_TYPES } from '~/constants/browser';
@@ -21,6 +22,18 @@ interface FirefoxViewProps {
   onNewTab?: (url?: string) => void;
   iframeRefs: React.MutableRefObject<{ [key: string]: HTMLIFrameElement | null }>;
   smartWindowMode?: boolean;
+}
+
+interface ChatMessage {
+  id: string;
+  text: string;
+  isUser: boolean;
+  timestamp: number;
+}
+
+interface ChatState {
+  isActive: boolean;
+  messages: ChatMessage[];
 }
 
 export interface FirefoxViewHandle {
@@ -46,6 +59,10 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
   smartWindowMode = false
 }, ref) => {
   const [tabOpenGraphData, setTabOpenGraphData] = useState<TabOpenGraphData>({});
+  const [chatState, setChatState] = useState<ChatState>({
+    isActive: false,
+    messages: []
+  });
   // const { selectedProfile } = useProfile();
   // const shortcuts = selectedProfile?.shortcuts || []; // Temporarily commented out - will be re-enabled when shortcuts section is added back
 
@@ -259,6 +276,11 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
     setDisplayedQuery(value);
     setSelectedSuggestionIndex(-1); // Reset selection when user types
 
+    // Don't show autocomplete in chat mode
+    if (chatState.isActive) {
+      return;
+    }
+
     // Clear existing debounce timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -272,7 +294,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
 
   // Handle keyboard navigation in search input
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions || !searchQuery.trim()) {
+    if (chatState.isActive || !showSuggestions || !searchQuery.trim()) {
       return;
     }
 
@@ -326,20 +348,43 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
 
   // Handle suggestion selection
   const handleSuggestionSelect = (suggestion: string, type: 'chat' | 'search' | 'navigation') => {
+    if (type === 'chat') {
+      // Enter chat mode - stay on the same page
+      const userMessage: ChatMessage = {
+        id: `user-${Date.now()}`,
+        text: suggestion,
+        isUser: true,
+        timestamp: Date.now()
+      };
+      
+      const aiMessage: ChatMessage = {
+        id: `ai-${Date.now()}`,
+        text: `I'm not able to provide real time summarizations about ${suggestion}, but can open a web page and summarize that.`,
+        isUser: false,
+        timestamp: Date.now() + 1
+      };
+      
+      setChatState({
+        isActive: true,
+        messages: [userMessage, aiMessage]
+      });
+      
+      setSearchQuery('');
+      setDisplayedQuery('');
+      setShowSuggestions(false);
+      setSelectedSuggestionIndex(-1);
+      return;
+    }
+    
+    // Handle other suggestion types normally
     setSearchQuery(suggestion);
     setDisplayedQuery(suggestion);
     setShowSuggestions(false);
     setSelectedSuggestionIndex(-1);
     
-    // Handle different suggestion types
     let navigateUrl: string;
     
     switch (type) {
-      case 'chat':
-        // For chat, we might want to navigate to a chat interface or handle differently
-        // For now, we'll use the search query as a fallback
-        navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(suggestion)} chat`;
-        break;
       case 'navigation':
         // For navigation suggestions, go directly to the website
         navigateUrl = suggestion.startsWith('http') ? suggestion : `https://${suggestion}`;
@@ -409,6 +454,32 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
     e.preventDefault();
       
     if (displayedQuery && displayedQuery.trim()) {
+      if (chatState.isActive) {
+        // In chat mode, add user message and AI response
+        const userMessage: ChatMessage = {
+          id: `user-${Date.now()}`,
+          text: displayedQuery,
+          isUser: true,
+          timestamp: Date.now()
+        };
+        
+        const aiMessage: ChatMessage = {
+          id: `ai-${Date.now()}`,
+          text: "I'm not able to provide real time summarizations about today's news, but can open a web page and summarize that.",
+          isUser: false,
+          timestamp: Date.now() + 1
+        };
+        
+        setChatState(prev => ({
+          ...prev,
+          messages: [...prev.messages, userMessage, aiMessage]
+        }));
+        
+        setSearchQuery('');
+        setDisplayedQuery('');
+        return;
+      }
+      
       // Default search behavior - search with Google
       const isURL = displayedQuery.includes('.') || displayedQuery.startsWith('http');
       const navigateUrl = isURL
@@ -422,6 +493,18 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
       setShowSuggestions(false);
       setSelectedSuggestionIndex(-1);
     }
+  };
+  
+  // Handle chat suggestion buttons (Search today's news, etc.)
+  const handleChatSuggestionClick = (suggestionType: 'search' | 'sites', query: string) => {
+    let navigateUrl: string;
+    if (suggestionType === 'search') {
+      navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+    } else {
+      // Open top news sites - could be a specific news aggregator
+      navigateUrl = `https://duckduckgo.com/?q=${encodeURIComponent('top news sites')}`;
+    }
+    onNewTab?.(navigateUrl);
   };
 
 
@@ -459,6 +542,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
           {smartWindowMode && (
             <>
 
+              {!chatState.isActive && (
               <div id="logo-wrapper" className="mb-8 flex justify-center">
                 <img
                   src={AiModeLogo}
@@ -466,8 +550,60 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                   className="h-10 w-auto"
                 />
               </div>
+              )}
 
               <div id="search-section" className={styles.searchSection}>
+                {/* Chat Messages Area */}
+                {chatState.isActive && (
+                  <div className="mb-8 flex flex-col gap-6 max-w-[794px] mx-auto">
+                    {chatState.messages.map((message) => (
+                      <div key={message.id} className="flex flex-col gap-2.5">
+                        {message.isUser ? (
+                          /* User Message */
+                          <div className="flex justify-end">
+                            <div className="bg-[rgba(255,255,255,0.75)] border border-[rgba(189,137,213,0.3)] rounded-[12px] px-3 py-[14.516px] shadow-[0px_0.25px_0.75px_0px_rgba(0,0,0,0.05),0px_2px_6px_0px_rgba(0,0,0,0.1)] max-w-md">
+                              <p className="text-[15px] text-[#15141a] font-['SF_Pro:Regular',_sans-serif]">{message.text}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          /* AI Message */
+                          <div className="flex gap-3 items-start">
+                            {/* AI Avatar Line */}
+                            <div className="w-[148px] h-px bg-gradient-to-r from-transparent to-gray-300 mt-3" />
+                            <div className="flex flex-col gap-6 py-2 max-w-[431px]">
+                              <div className="flex flex-col gap-4">
+                                <p className="text-[17px] text-[#15141a] font-['SF_Pro:Regular',_sans-serif] leading-[20px]">
+                                  {message.text}
+                                </p>
+                              </div>
+                              {/* Chat Suggestion Buttons */}
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleChatSuggestionClick('search', chatState.messages[0]?.text || 'today\'s news')}
+                                  className="bg-[rgba(191,143,204,0.2)] border border-[rgba(125,32,124,0.15)] rounded-[58px] px-[17px] py-[14.516px] h-12 flex items-center gap-2 shadow-[0px_0.25px_0.75px_0px_rgba(0,0,0,0.05),0px_2px_6px_0px_rgba(0,0,0,0.1)] mix-blend-multiply hover:bg-[rgba(191,143,204,0.3)] transition-colors"
+                                >
+                                  <SearchIcon className="w-4 h-4" />
+                                  <span className="text-[13px] text-[#15141a] font-['SF_Pro:Regular',_sans-serif]">Search with DuckDuckGo</span>
+                                </button>
+                                <button
+                                  onClick={() => handleChatSuggestionClick('sites', 'top news sites')}
+                                  className="bg-[rgba(191,143,204,0.2)] border border-[rgba(125,32,124,0.15)] rounded-[58px] px-[17px] py-[14.516px] h-12 flex items-center gap-2 shadow-[0px_0.25px_0.75px_0px_rgba(0,0,0,0.05),0px_2px_6px_0px_rgba(0,0,0,0.1)] mix-blend-multiply hover:bg-[rgba(191,143,204,0.3)] transition-colors"
+                                >
+                                  <div className="w-4 h-4">
+                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                                      <path d="M12,1H2A1,1 0 0,0 1,2V12A1,1 0 0,0 2,13H12A1,1 0 0,0 13,12V2A1,1 0 0,0 12,1M12,12H2V2H12V12M11,11H3V9H11V11M11,8H3V6H11V8M11,5H3V3H11V5Z" />
+                                    </svg>
+                                  </div>
+                                  <span className="text-[13px] text-[#15141a] font-['SF_Pro:Regular',_sans-serif]">Open top news sites</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <form id="search-form" onSubmit={handleSearchSubmit} className={styles.searchForm}>
                   <div id="search-input-wrapper" className={styles.search_bar} style={{ position: 'relative' }}>
@@ -478,30 +614,32 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                       onChange={handleSearchInputChange}
                       onKeyDown={handleSearchKeyDown}
                       onFocus={() => {
-                        if (searchQuery.trim()) {
+                        if (searchQuery.trim() && !chatState.isActive) {
                           setShowSuggestions(true);
                         }
                       }}
-                      placeholder="Search or enter address"
+                      placeholder={chatState.isActive ? "Ask more" : "Ask, search, or type a URL"}
                       id="search-input"
                       className={styles.searchInput}
                       autoComplete="off"
                     />
 
-                    {/* Autocomplete suggestions within the same container */}
-                    <SearchAutocomplete
-                      ref={autocompleteRef}
-                      googleSuggestions={googleSuggestions}
-                      query={searchQuery}
-                      isVisible={showSuggestions}
-                      selectedIndex={selectedSuggestionIndex}
-                      onSuggestionClick={handleSuggestionSelect}
-                      onSuggestionHover={handleSuggestionHover}
-                      onSuggestionsBuilt={setCurrentSuggestions}
-                    />
+                    {/* Autocomplete suggestions within the same container - hide in chat mode */}
+                    {!chatState.isActive && (
+                      <SearchAutocomplete
+                        ref={autocompleteRef}
+                        googleSuggestions={googleSuggestions}
+                        query={searchQuery}
+                        isVisible={showSuggestions}
+                        selectedIndex={selectedSuggestionIndex}
+                        onSuggestionClick={handleSuggestionSelect}
+                        onSuggestionHover={handleSuggestionHover}
+                        onSuggestionsBuilt={setCurrentSuggestions}
+                      />
+                    )}
 
                     {/* Add subtle separator between suggestions and controls when suggestions are shown */}
-                    {showSuggestions && searchQuery.trim() && (
+                    {!chatState.isActive && showSuggestions && searchQuery.trim() && (
                       <div style={{ 
                         height: '1px', 
                         background: 'rgba(21, 20, 26, 0.1)', 
@@ -573,7 +711,8 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                     </div>
                   </div>
 
-                  {/* ACTION BUTTONS  */}
+                  {/* ACTION BUTTONS  */
+                  !chatState.isActive && (
                     <div className={styles.action_buttons}>
                       <button className={styles.primary_button}>
                         <i className="fa-solid fa-file-lines"></i>
@@ -588,6 +727,7 @@ export const FirefoxView = React.forwardRef<FirefoxViewHandle, FirefoxViewProps>
                         <span>Write Code</span>
                       </button>
                     </div>
+                  )}
                 </form>
               </div>
             </>
